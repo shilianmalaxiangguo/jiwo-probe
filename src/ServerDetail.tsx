@@ -358,6 +358,8 @@ export function ServerDetail({ server, index, onClose, showHealthScore = false, 
   const lines = [{ ...average, key: '__avg__' }, ...ping]
   const health = useMemo(() => serverHealth(server), [server])
   const retro = variant !== undefined
+  const down = networkSpeed(server.download_speed).split(' ')
+  const up = networkSpeed(server.upload_speed).split(' ')
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -430,14 +432,14 @@ export function ServerDetail({ server, index, onClose, showHealthScore = false, 
                   </div>
                 )}
                 {(server.upload_speed !== undefined || server.download_speed !== undefined) && (
-                  <div className="detail-speed">
-                    <span className="download" title="下行速度">
-                      <ArrowDown size={16} />
-                      {networkSpeed(server.download_speed)}
+                  <div className={retro ? 'retro-detail-speed' : 'detail-speed'}>
+                    <span className={retro ? 'read read-down' : 'download'} title="下行速度">
+                      <ArrowDown className={retro ? 'read-icon' : undefined} size={retro ? 10 : 16} />
+                      {retro ? <><b className="num">{down[0]}</b><i className="read-unit">{down.slice(1).join(' ')}</i></> : networkSpeed(server.download_speed)}
                     </span>
-                    <span className="upload" title="上行速度">
-                      <ArrowUp size={16} />
-                      {networkSpeed(server.upload_speed)}
+                    <span className={retro ? 'read read-up' : 'upload'} title="上行速度">
+                      <ArrowUp className={retro ? 'read-icon' : undefined} size={retro ? 10 : 16} />
+                      {retro ? <><b className="num">{up[0]}</b><i className="read-unit">{up.slice(1).join(' ')}</i></> : networkSpeed(server.upload_speed)}
                     </span>
                   </div>
                 )}

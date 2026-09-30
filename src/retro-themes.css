@@ -474,6 +474,15 @@ html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-detail .detail-panel
 html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-detail .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-detail .detail-metric-head { flex-wrap: wrap; }
 html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-detail .progress { display: block; width: 100%; }
+html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-detail-speed { display: flex; flex-wrap: wrap; gap: 4px 12px; align-self: center; font: 12px/1.35 Tahoma, SimSun, '宋体', 'Microsoft YaHei', 'PingFang SC', sans-serif; }
+html.theme-macos9 .retro-detail-speed { font-family: var(--font); line-height: 1.45; }
+html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-detail .detail-loadavg { color: var(--text-muted); }
+html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-detail .detail-loadavg code { border: 1px solid; border-color: var(--hilight) var(--shadow) var(--shadow) var(--hilight); border-radius: var(--r-control, 0); background: var(--face); color: var(--text); box-shadow: none; }
+html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-detail .detail-value { border: 1px solid var(--shadow); background: var(--face); box-shadow: inset 1px 1px var(--hilight), 1px 1px var(--hilight); }
+html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-detail .detail-value-main strong { color: var(--text); letter-spacing: 0; }
+html.theme-winxp body.light .retro-detail .detail-value-main strong { color: #003399; }
+html.theme-macos9 .retro-detail .detail-value-main strong { color: #333399; }
+html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-detail .detail-value .progress { margin-top: 7px; }
 html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-detail .detail-panel-head { flex-wrap: wrap; }
 html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-detail .detail-region { color: var(--title-text); }
 html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-host-box,
@@ -494,6 +503,7 @@ html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-host-head { display:
 html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-host-head h3 { margin: 0; flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 13px; }
 html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-host-status { flex-shrink: 0; padding: 1px 8px; border: 1px solid; border-color: var(--shadow) var(--hilight) var(--hilight) var(--shadow); background: var(--window); }
 html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-host-grid { margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 2px; background: var(--window); border: 1px solid; border-color: var(--shadow) var(--hilight) var(--hilight) var(--shadow); box-shadow: inset 1px 1px var(--dkshadow); }
+html.theme-win2000 .retro-detail :is(.retro-host-status, .retro-host-grid) { background: var(--face); }
 html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-host-item { min-width: 0; padding: 4px 8px; border-bottom: 1px solid var(--row-line); }
 html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-host-item dt { color: var(--text-muted); font-size: 11px; }
 html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-host-item dd { margin: 1px 0 0; overflow-wrap: anywhere; }
@@ -648,7 +658,6 @@ html.theme-macos9 .retro-detail-macos9 :is(.ranges button:active, .ranges button
   color: #fff;
   box-shadow: inset 1px 1px #666, inset -1px -1px #aaa, inset 2px 2px #777, inset -2px -2px #999;
 }
-html.theme-macos9 .retro-detail-macos9 .detail-loadavg code { border: 1px solid #999; border-radius: 0; background: #eee; color: #262626; }
 html.theme-macos9 .retro-detail-macos9 :is(.retro-host-box, .retro-chart-box) { border-color: #999; box-shadow: inset 1px 1px #fff, 1px 1px #fff; background: #eee; }
 html.theme-macos9 .retro-detail-macos9 .retro-chart-plot { background: #fff; border: 1px solid #262626; box-shadow: -1px -1px #999, 1px 1px #fff; }
 html.theme-macos9 .retro-detail-macos9 button:focus-visible { outline: 2px solid #9999fe; outline-offset: 1px; }
