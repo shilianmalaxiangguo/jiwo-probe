@@ -8,6 +8,7 @@ import { PING_AVERAGES, pingTargetOptions, resolvePingGroups, type PingGroupConf
 import { PasskeyLogin } from './PasskeyLogin'
 import { Twemoji } from './Twemoji'
 import { ServerDetail } from './ServerDetail'
+import { RetroProgress as Progress } from './RetroProgress'
 import { ReturnRouteBadges } from './App'
 import { THEME_OPTIONS } from './theme-picker-model'
 
@@ -61,13 +62,6 @@ function lossTone(value: number): string {
   if (!Number.isFinite(value) || value <= 0) return 'var(--accent-green)'
   if (value < 5) return 'var(--accent-yellow)'
   return 'var(--accent-red)'
-}
-
-function Progress({ value, unlimited = false }: { value: number; unlimited?: boolean }) {
-  const safe = Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 0
-  return <span className="progress" role="progressbar" aria-valuenow={Math.round(safe)} aria-valuemin={0} aria-valuemax={100}>
-    <span className={`progress-fill${safe >= 85 ? ' hot' : ''}${unlimited ? ' unlimited' : ''}`} style={{ width: `${unlimited ? 100 : safe}%` }} />
-  </span>
 }
 
 function Flag({ code }: { code?: string }) {

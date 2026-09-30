@@ -419,6 +419,7 @@ html.theme-winxp body:not(.light) .retro-route-medal .route-badge-text.silver {
   background-color: transparent;
   background-image: none;
 }
+html.theme-win2000 body, html.theme-win2000 body.light { --desktop: #008080; }
 html.theme-win2000 .app-body { background: var(--face); }
 html.theme-win2000 .retro-route-badges { gap: 3px; margin-top: 4px; }
 /* 路由信息沿用硬件标签的凸起边框，金银等级通过小奖牌和文字区分。 */
@@ -472,6 +473,7 @@ html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-detail .detail-cols 
 html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-detail .detail-panel { min-width: 0; }
 html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-detail .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-detail .detail-metric-head { flex-wrap: wrap; }
+html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-detail .progress { display: block; width: 100%; }
 html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-detail .detail-panel-head { flex-wrap: wrap; }
 html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-detail .detail-region { color: var(--title-text); }
 html:is(.theme-winxp, .theme-win2000, .theme-macos9) .retro-host-box,
@@ -650,8 +652,6 @@ html.theme-macos9 .retro-detail-macos9 .detail-loadavg code { border: 1px solid 
 html.theme-macos9 .retro-detail-macos9 :is(.retro-host-box, .retro-chart-box) { border-color: #999; box-shadow: inset 1px 1px #fff, 1px 1px #fff; background: #eee; }
 html.theme-macos9 .retro-detail-macos9 .retro-chart-plot { background: #fff; border: 1px solid #262626; box-shadow: -1px -1px #999, 1px 1px #fff; }
 html.theme-macos9 .retro-detail-macos9 button:focus-visible { outline: 2px solid #9999fe; outline-offset: 1px; }
-html.theme-macos9 .retro-detail-macos9 .meter { border-radius: 0; background: #ccc; border: 1px solid #999; }
-html.theme-macos9 .retro-detail-macos9 .meter > i { border-radius: 0; background: #333399; }
 html.theme-macos9 .retro-route-badges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; margin-top: 4px; }
 html.theme-macos9 .retro-route-medal { min-height: 24px; border: 1px solid #999; background: #ddd; box-shadow: inset 1px 1px #fff, inset -1px -1px #ccc; }
 html.theme-macos9 .retro-route-medal :is(.route-badge-text, .route-badge-animation):is(.gold, .silver) { border: 0; border-radius: 0; background: transparent; box-shadow: none; color: #262626; padding: 1px 2px; }

@@ -9,6 +9,7 @@ import { Twemoji } from './Twemoji'
 import { Meter, ReturnRouteBadges, SystemIcon, TrafficChart, SystemTrendChart, averagePing, bytes, expiring, expired, formatAxisDateTime, formatLossTick, hasLeadingFlag, HorizontalChart, lossScale, pct, regionFlag, regionLabel, remainingDays } from './App'
 import { serverHealth } from './PremiumProbePage'
 import { computeMonthlyTrafficCost, computeRemainingValue, formatMoney } from './value'
+import { RetroProgress } from './RetroProgress'
 
 const RetroHistoryCharts = lazy(() => import('./RetroHistoryCharts').then((module) => ({ default: module.RetroHistoryCharts })))
 
@@ -29,7 +30,7 @@ function formatUptime(seconds: number): string {
   return `${seconds} 秒`
 }
 
-function RemainingValueBlock({ server }: { server: ProbeServer }) {
+function RemainingValueBlock({ server, retro = false }: { server: ProbeServer; retro?: boolean }) {
   const rv = computeRemainingValue(server)
   if (!rv) return null
   const percent = Math.min(100, Math.max(0, (rv.days / rv.cycleDays) * 100))
@@ -49,9 +50,9 @@ function RemainingValueBlock({ server }: { server: ProbeServer }) {
           剩余 {rv.days} / {rv.cycleDays} 天
         </span>
       </div>
-      <div className="meter">
+      {retro ? <RetroProgress value={percent} hot={false} /> : <div className="meter">
         <i style={{ width: `${percent}%` }} />
-      </div>
+      </div>}
     </div>
   )
 }
@@ -328,7 +329,7 @@ function PingTrendChart({ serverIndex, initial, targetKey, mode }: { serverIndex
   )
 }
 
-function DetailMetric({ icon, label, value, percent, sub }: { icon: React.ReactNode; label: string; value: string; percent: number; sub?: string }) {
+function DetailMetric({ icon, label, value, percent, sub, retro = false }: { icon: React.ReactNode; label: string; value: string; percent: number; sub?: string; retro?: boolean }) {
   return (
     <div className="detail-metric">
       <div className="detail-metric-head">
@@ -338,9 +339,9 @@ function DetailMetric({ icon, label, value, percent, sub }: { icon: React.ReactN
         </span>
         <strong>{value}</strong>
       </div>
-      <div className="meter">
+      {retro ? <RetroProgress value={percent} /> : <div className="meter">
         <i style={{ width: `${Math.max(0, Math.min(100, percent))}%` }} />
-      </div>
+      </div>}
       {sub && <div className="detail-metric-sub">{sub}</div>}
     </div>
   )
@@ -401,15 +402,16 @@ export function ServerDetail({ server, index, onClose, showHealthScore = false, 
             <section className="detail-panel">
               <h3>资源占用</h3>
               <div className="detail-grid">
-                {server.cpu_pct !== undefined && <DetailMetric icon={<Cpu size={15} />} label="CPU" value={`${server.cpu_pct.toFixed(1)}%`} percent={server.cpu_pct} />}
-                {server.mem_total !== undefined && <DetailMetric icon={<MemoryStick size={15} />} label="内存" value={`${bytes(server.mem_used)} / ${bytes(server.mem_total)}`} percent={pct(server.mem_used, server.mem_total)} />}
-                {server.disk_total !== undefined && <DetailMetric icon={<HardDrive size={15} />} label="硬盘" value={`${bytes(server.disk_used)} / ${bytes(server.disk_total)}`} percent={pct(server.disk_used, server.disk_total)} />}
+                {server.cpu_pct !== undefined && <DetailMetric icon={<Cpu size={15} />} label="CPU" value={`${server.cpu_pct.toFixed(1)}%`} percent={server.cpu_pct} retro={retro} />}
+                {server.mem_total !== undefined && <DetailMetric icon={<MemoryStick size={15} />} label="内存" value={`${bytes(server.mem_used)} / ${bytes(server.mem_total)}`} percent={pct(server.mem_used, server.mem_total)} retro={retro} />}
+                {server.disk_total !== undefined && <DetailMetric icon={<HardDrive size={15} />} label="硬盘" value={`${bytes(server.disk_used)} / ${bytes(server.disk_total)}`} percent={pct(server.disk_used, server.disk_total)} retro={retro} />}
                 {server.traffic_used !== undefined && (
                   <DetailMetric
                     icon={<PieChart size={15} />}
                     label="流量"
                     value={server.traffic_limit ? `${bytes(server.traffic_used, false)} / ${bytes(server.traffic_limit, false)}` : bytes(server.traffic_used, false)}
                     percent={pct(server.traffic_used, server.traffic_limit)}
+                    retro={retro}
                     sub={[
                       (server.traffic_used_up !== undefined || server.traffic_used_down !== undefined)
                         ? `↑ ${bytes(server.traffic_used_up, false)} · ↓ ${bytes(server.traffic_used_down, false)}`
@@ -529,7 +531,7 @@ export function ServerDetail({ server, index, onClose, showHealthScore = false, 
                       </span>
                     )}
                   </div>
-                  <RemainingValueBlock server={server} />
+                  <RemainingValueBlock server={server} retro={retro} />
                 </section>
               )}
 
