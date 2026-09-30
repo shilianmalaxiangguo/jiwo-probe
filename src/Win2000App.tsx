@@ -8,7 +8,8 @@ import { PING_AVERAGES, pingTargetOptions, resolvePingGroups, type PingGroupConf
 import { PasskeyLogin } from './PasskeyLogin'
 import { Twemoji } from './Twemoji'
 import { ServerDetail } from './ServerDetail'
-import { ReturnRouteBadges, THEME_OPTIONS } from './App'
+import { ReturnRouteBadges } from './App'
+import { THEME_OPTIONS } from './theme-picker-model'
 
 type Skin = 'win31' | 'win2000' | 'xp' | 'aqua'
 type View = 'cards' | 'ring' | 'table'
@@ -251,7 +252,7 @@ export function RetroDesktopApp({ family }: { family: RetroFamily }) {
   const title = data?.title?.trim() || '服务器监控'
   const familyControl = <select className="retro-family-select" aria-label="切换主题" value={themeOverride ?? ''} onChange={event => setTheme(event.target.value ? event.target.value as ThemeName : null)}>
     <option value="">跟随主控</option>
-    {THEME_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+    {THEME_OPTIONS.filter(option => option.value !== null).map(option => <option key={option.value} value={option.value!}>{option.label}</option>)}
   </select>
 
   if (!data && !error) return <main className="center">正在连接 Win2000 主题…</main>

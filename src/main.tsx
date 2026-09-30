@@ -4,6 +4,7 @@ import { App } from './App'
 import { applyAppearance, getActiveTheme, ProbeProvider, useProbe } from './use-probe'
 import './styles.css'
 import './server-capabilities.css'
+import './lumina-paper.css'
 import './win2000.css'
 import './retro-themes.css'
 
