@@ -4,6 +4,8 @@ import type { ProbeAppearance, ProbeBackgroundAppearance, ProbePayload, ProbeSer
 import { DEFAULT_PING_GROUP_CONFIG, parsePingGroupConfig, type PingGroupConfig } from './ping-groups'
 import { DEFAULT_NETWORK_SPEED_UNIT, parseNetworkSpeedUnit, type NetworkSpeedUnit } from './network-speed'
 import { canonicalThemeOverride, parseThemeName } from './theme-name'
+import { LUMINAPLUS_COLOR_KEY, resolveLuminaPlusColor, type LuminaPlusColor } from './luminaplus/luminaplus-color'
+import { DEFAULT_SHOW_CONNECTION_CHART, parseShowConnectionChart } from './connection-chart'
 export { isBuiltinTheme, parseThemeName } from './theme-name'
 
 const APPEARANCE_CACHE = 'mmwx-probe-appearance'
@@ -12,6 +14,8 @@ const THEME_OVERRIDE = 'mmwx-probe-theme-override'
 let runtimeBackground: ProbeBackgroundAppearance | undefined
 let runtimePingGroups = DEFAULT_PING_GROUP_CONFIG
 let runtimeNetworkSpeedUnit = DEFAULT_NETWORK_SPEED_UNIT
+// 配置返回前先不挂载小折线，避免 CF 已关闭时首屏闪现。
+let runtimeConnectionChartEnabled: boolean | undefined
 let runtimeThemeConfigPromise: Promise<void> | undefined
 let lastAppliedAppearance: ProbeAppearance | undefined
 
@@ -65,15 +69,17 @@ function loadRuntimeThemeConfig(): Promise<void> {
   runtimeThemeConfigPromise = fetch('/api/theme-config', { cache: 'no-store' })
     .then(async (response) => {
       if (!response.ok) return
-      const config = await response.json() as { background?: ProbeBackgroundAppearance; pingGroups?: PingGroupConfig; networkSpeedUnit?: unknown }
+      const config = await response.json() as { background?: ProbeBackgroundAppearance; pingGroups?: PingGroupConfig; networkSpeedUnit?: unknown; showConnectionChart?: unknown }
       if (config.background?.url) runtimeBackground = config.background
       runtimePingGroups = parsePingGroupConfig(config.pingGroups)
       runtimeNetworkSpeedUnit = parseNetworkSpeedUnit(config.networkSpeedUnit)
+      runtimeConnectionChartEnabled = parseShowConnectionChart(config.showConnectionChart)
       if (lastAppliedAppearance) applyAppearance(lastAppliedAppearance)
     })
     .catch(() => {
       // 旧版 Worker 没有该接口时继续使用主控下发或主题默认背景。
     })
+    .finally(() => { runtimeConnectionChartEnabled ??= DEFAULT_SHOW_CONNECTION_CHART })
   return runtimeThemeConfigPromise
 }
 
@@ -211,10 +217,18 @@ export function applyAppearance(input?: ProbeAppearance) {
   let dark = false
   let gold = false
   let platinum = false
+  let paper = false
   // premium 配色三态(auto/白金/黑金, 由 PremiumProbePage 控制 localStorage premium-probe-color-mode):
   // applyAppearance 在 WS/轮询每帧(5s)都会跑, 必须尊重三态, 否则 remove('platinum') 会冲掉
   // auto/手动白金类造成白金黑金横跳(2026-08-17 用户实测)
-  if (theme === 'premium') {
+  if (theme === 'luminaplus') {
+    const mode = resolveLuminaPlusColor({
+      saved: localStorage.getItem(LUMINAPLUS_COLOR_KEY), paper: parsed.paper, light: parsed.light,
+      legacy: darkOverride, hour: (new Date().getUTCHours() + 8) % 24,
+    })
+    dark = mode === 'dark'
+    paper = mode === 'paper'
+  } else if (theme === 'premium') {
     const premiumMode = localStorage.getItem('premium-probe-color-mode')
     if (premiumMode === 'platinum') {
       platinum = true
@@ -266,6 +280,7 @@ export function applyAppearance(input?: ProbeAppearance) {
   root.classList.toggle('dark', dark)
   root.classList.toggle('gold', gold)
   root.classList.toggle('platinum', platinum)
+  root.classList.toggle('lp-paper', paper)
   // Glassmorphism 明暗下发: 写 master 缓存, GmApp 初始化/轮询时读取(用户手动切换优先)
   // 无后缀 glassmorphism = auto 模式(北京时间白天浅色/夜间深色); light/dark 后缀固定对应模式
   if (theme === 'glassmorphism') {
@@ -278,6 +293,11 @@ export function applyAppearance(input?: ProbeAppearance) {
 
 export function getDarkOverride(): string | null {
   return localStorage.getItem(DARK_OVERRIDE)
+}
+
+export function setLuminaPlusColorMode(mode: LuminaPlusColor | 'auto') {
+  localStorage.setItem(LUMINAPLUS_COLOR_KEY, mode)
+  applyAppearance()
 }
 
 export function setDarkOverride(mode: 'dark' | 'light' | 'gold' | 'platinum' | null) {
@@ -299,7 +319,7 @@ export function getThemeOverride(): ThemeName | null {
 // 视图分支（如 theme==='lumina' 渲染 ServerCardLumina）应读这个，而不是只看 override。
 export function getActiveTheme(): string {
   const override = getThemeOverride()
-  if (override) return override
+  if (override) return parseThemeName(override).theme
   try {
     const cached = JSON.parse(localStorage.getItem(APPEARANCE_CACHE) || 'null') as ProbeAppearance | null
     const cachedTheme = cached?.theme === 'pixel' ? 'winxp' : cached?.theme || 'winxp'
@@ -359,6 +379,7 @@ export interface ProbeState {
   error?: string
   pingGroups: PingGroupConfig
   networkSpeedUnit: NetworkSpeedUnit
+  connectionChartEnabled: boolean | undefined
 }
 
 const ProbeContext = createContext<ProbeState | null>(null)
@@ -368,6 +389,7 @@ function useProbeConnection(): ProbeState {
   const [error, setError] = useState<string>()
   const [pingGroups, setPingGroups] = useState(runtimePingGroups)
   const [networkSpeedUnit, setNetworkSpeedUnit] = useState(runtimeNetworkSpeedUnit)
+  const [connectionChartEnabled, setConnectionChartEnabled] = useState(runtimeConnectionChartEnabled)
   const timer = useRef<number | undefined>(undefined)
   const watchdogTimer = useRef<number | undefined>(undefined)
   const lastFrameAt = useRef(0)
@@ -412,6 +434,7 @@ function useProbeConnection(): ProbeState {
       if (!stopped) {
         setPingGroups(runtimePingGroups)
         setNetworkSpeedUnit(runtimeNetworkSpeedUnit)
+        setConnectionChartEnabled(runtimeConnectionChartEnabled)
       }
     })
     // 先轮询一次拿首帧数据, 同时连 WS; 之后由 watchdog 统一裁决:
@@ -457,7 +480,7 @@ function useProbeConnection(): ProbeState {
     }
   }, [])
 
-  return { data, error, pingGroups, networkSpeedUnit }
+  return { data, error, pingGroups, networkSpeedUnit, connectionChartEnabled }
 }
 
 // 全站只在 Provider 内建立一套 HTTP/WS 连接。各主题调用 useProbe() 时只读取

@@ -2,6 +2,35 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { trafficWeek, trafficPopoverPosition } from './luminaplus-traffic.ts'
 import { rankLiveSpeeds, rankPeriodTraffic } from './luminaplus-model.ts'
+import { nextLuminaPlusColor, resolveLuminaPlusColor } from './luminaplus-color.ts'
+
+test('LuminaPlus cycles exactly three palettes and manual selection takes priority', () => {
+  assert.equal(nextLuminaPlusColor('light'), 'dark')
+  assert.equal(nextLuminaPlusColor('dark'), 'paper')
+  assert.equal(nextLuminaPlusColor('paper'), 'light')
+  for (const saved of ['light', 'dark', 'paper']) {
+    assert.equal(resolveLuminaPlusColor({ saved, paper: true, legacy: 'gold', hour: 23 }), saved)
+  }
+})
+
+test('Paper stays warm throughout the day and explicit follow-controller ignores legacy choices', () => {
+  for (const hour of [0, 6, 12, 18, 23]) {
+    assert.equal(resolveLuminaPlusColor({ paper: true, legacy: 'dark', hour }), 'paper')
+    assert.equal(resolveLuminaPlusColor({ saved: 'auto', paper: true, hour }), 'paper')
+    assert.equal(resolveLuminaPlusColor({ saved: 'auto', light: true, legacy: 'dark', hour }), 'light')
+    assert.equal(resolveLuminaPlusColor({ saved: 'auto', light: false, legacy: 'light', hour }), 'dark')
+  }
+})
+
+test('LuminaPlus retains legacy modes and normal automatic light/dark boundaries', () => {
+  for (const legacy of ['dark', 'gold']) assert.equal(resolveLuminaPlusColor({ legacy, hour: 12 }), 'dark')
+  for (const legacy of ['light', 'platinum']) assert.equal(resolveLuminaPlusColor({ legacy, hour: 23 }), 'light')
+  for (const saved of [undefined, null, 'invalid', 'auto']) {
+    for (const [hour, expected] of [[0, 'dark'], [5, 'dark'], [6, 'light'], [17, 'light'], [18, 'dark'], [23, 'dark']]) {
+      assert.equal(resolveLuminaPlusColor({ saved, hour }), expected)
+    }
+  }
+})
 
 test('period ranking uses billed usage without re-adding directions or doubling one-way traffic', () => {
   const servers = [
@@ -202,6 +231,19 @@ test('asset summary separates currencies, uses controller FX, and excludes inval
   assert.equal(result.groups.length, 2)
   assert.deepEqual(result.groups[0], { currency: 'CNY', monthly: 70, remaining: 840 / 365, priced: 2, valued: 2 })
   assert.deepEqual(result.groups[1], { currency: 'USD', monthly: 10, remaining: 120 / 365, priced: 1, valued: 1 })
+})
+
+test('multi-year renewals and permanent purchases do not inflate the asset budget', () => {
+  const result = assetOverview([
+    { renewal_price: 240, renewal_cycle: 'two_year', renewal_currency: 'USD' },
+    { renewal_price: 360, renewal_cycle: 'three_year', renewal_currency: 'USD' },
+    { renewal_price: 5000, renewal_cycle: 'permanent', renewal_currency: 'USD', expires_at: '2099-01-01' },
+  ])
+  assert.equal(result.groups[0].monthly, 20)
+  assert.equal(result.groups[0].priced, 3)
+  assert.equal(result.groups[0].valued, 0)
+  assert.equal(result.groups[0].remaining, 0)
+  assert.equal(result.unpriced, 0)
 })
 
 test('unknown expiry does not become a zero-value asset, but an expired real asset does', () => {

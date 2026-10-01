@@ -1,15 +1,17 @@
 import { memo, useMemo, useState } from 'react'
-import { Globe2, Grid3X3, LayoutGrid, List, Moon, Network, Rows3, Search, Sun } from 'lucide-react'
+import { Globe2, Grid3X3, LayoutGrid, List, Moon, Network, Rows3, ScrollText, Search, Sun } from 'lucide-react'
 import type { ProbePayload, ThemeName } from '../types'
 import { ThemeSelect } from '../App'
 import { PasskeyLogin } from '../PasskeyLogin'
-import { getThemeOverride, setDarkOverride } from '../use-probe'
+import { getThemeOverride, setLuminaPlusColorMode } from '../use-probe'
+import { LUMINAPLUS_COLOR_NAMES, nextLuminaPlusColor, type LuminaPlusColor } from './luminaplus-color'
 import { isExpiring, miniSummary, selectServers, providerName, type MiniStatus, type MiniSort } from '../mini/mini-model'
 import LuminaPlusCard from './LuminaPlusCard'
 import { parseLuminaPlusView, regionKey, type LuminaPlusView, type SpeedTrail } from './luminaplus-model'
 import LuminaPlusOverview from './LuminaPlusOverview'
 import { useLuminaPlusSnapshot } from './use-luminaplus-snapshot'
 import { LuminaPlusLicenseFooter } from './LuminaPlusLicenseFooter'
+import { ForwardOverview } from '../ForwardOverview'
 import './luminaplus.css'
 
 const sorts: Record<MiniSort, string> = { default: '默认排序', name: '名称 A–Z', cpu: 'CPU 占用 ↓', memory: '内存占用 ↓', traffic: '已用流量 ↓', latency: '延迟最低', expiry: '到期最近' }
@@ -29,7 +31,10 @@ const LuminaPlusHome = memo(function LuminaPlusHome({ data, trails, error, onThe
   const [view, setView] = useState<LuminaPlusView>(() => { try { return parseLuminaPlusView(localStorage.getItem('jiwo-luminaplus-view')) } catch { return 'large' } })
   const changeView = (next: LuminaPlusView) => { setView(next); try { localStorage.setItem('jiwo-luminaplus-view', next) } catch { /* Private mode still works for this session. */ } }
   const [, setColorRevision] = useState(0)
-  const dark = document.documentElement.classList.contains('dark') || document.documentElement.classList.contains('gold')
+  const root = document.documentElement
+  const color: LuminaPlusColor = root.classList.contains('lp-paper') ? 'paper' : root.classList.contains('dark') || root.classList.contains('gold') ? 'dark' : 'light'
+  const nextColor = nextLuminaPlusColor(color)
+  const ColorIcon = color === 'paper' ? ScrollText : color === 'dark' ? Moon : Sun
   const visible = useMemo(() => selectServers(servers, { query, status, provider, sort }).filter(({ server }) => !region || regionKey(server) === region), [servers, query, status, provider, sort, region])
   const regions = useMemo(() => [...servers.reduce((counts, server) => { const key = regionKey(server); counts.set(key, (counts.get(key) || 0) + 1); return counts }, new Map<string, number>())].sort((a, b) => b[1] - a[1]), [servers])
   const summary = useMemo(() => miniSummary(servers), [servers])
@@ -40,8 +45,8 @@ const LuminaPlusHome = memo(function LuminaPlusHome({ data, trails, error, onThe
   ]
   return <div className="lp-app" data-view={view}>
     <header className="lp-header"><div className="lp-header-inner"><a href="#" className="lp-brand" aria-label="返回首页"><span className="lp-brand-mark">{data.logo ? <img src={data.logo} alt="" /> : <Network size={23} />}</span><span><h1 title={data.title?.trim() || '服务器状态'}>{data.title?.trim() || '服务器状态'}</h1><small>集群实时探针</small></span></a>
-      <nav aria-label="外观与登录"><PasskeyLogin buttonClassName="lp-icon-button" /><ThemeSelect value={getThemeOverride()} onChange={onThemeChange} />
-        <button className="lp-icon-button" type="button" aria-label={dark ? '切换浅色模式' : '切换深色模式'} title={dark ? '切换浅色模式' : '切换深色模式'} onClick={() => { setDarkOverride(dark ? 'light' : 'dark'); setColorRevision(value => value + 1) }}>{dark ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}</button>
+      <nav aria-label="外观与登录"><PasskeyLogin buttonClassName="lp-icon-button" /><ThemeSelect value={getThemeOverride()} onChange={name => { if (name === null) setLuminaPlusColorMode('auto'); onThemeChange(name) }} />
+        <button className="lp-icon-button" type="button" aria-label={`切换至 ${LUMINAPLUS_COLOR_NAMES[nextColor]} 配色`} title={`当前：${LUMINAPLUS_COLOR_NAMES[color]}；点击切换至 ${LUMINAPLUS_COLOR_NAMES[nextColor]}`} onClick={() => { setLuminaPlusColorMode(nextColor); setColorRevision(value => value + 1) }}><ColorIcon size={18} aria-hidden="true" /></button>
       </nav>
     </div></header>
     <main className="lp-main">
@@ -55,6 +60,7 @@ const LuminaPlusHome = memo(function LuminaPlusHome({ data, trails, error, onThe
       </section>
       <div className="lp-region-filter" role="group" aria-label="地区筛选"><Globe2 size={15} /><button type="button" aria-pressed={!region} onClick={() => setRegion('')}>全部地区 <small>{servers.length}</small></button>{regions.map(([name, count]) => <button key={name} type="button" aria-pressed={region === name} onClick={() => setRegion(region === name ? '' : name)}>{name}<small>{count}</small></button>)}</div>
       <section className={`lp-nodes lp-view-${view}`} aria-label="节点列表">{visible.map(({ server, index }) => <LuminaPlusCard key={index} server={server} index={index} view={view} trail={trails[index]} />)}{!visible.length && <div className="lp-empty"><Search size={26} /><h3>{servers.length ? '没有匹配的节点' : '暂无服务器数据'}</h3><p>{servers.length ? '换个关键词，或清除筛选条件。' : '等待主控上报。'}</p>{!!servers.length && <button type="button" onClick={() => { setQuery(''); setStatus('all'); setProvider(''); setRegion('') }}>清除筛选</button>}</div>}</section>
+      <ForwardOverview data={data} />
       <footer className="lp-footer"><span>Powered by <a href="https://github.com/chnnic/jiwo-probe" target="_blank" rel="noreferrer">Jiwo Probe</a></span><a href="https://github.com/shanyang242/Komari-Theme-LuminaPlus" target="_blank" rel="noreferrer">Design inspired by LuminaPlus</a></footer>
     </main>
     <LuminaPlusLicenseFooter badges={data.license_badge} />

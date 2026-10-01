@@ -10,15 +10,11 @@ import { Meter, ReturnRouteBadges, SystemIcon, TrafficChart, SystemTrendChart, a
 import { serverHealth } from './PremiumProbePage'
 import { computeMonthlyTrafficCost, computeRemainingValue, formatMoney } from './value'
 import { RetroProgress } from './RetroProgress'
+import { CYCLE_LABELS as cycleLabel, isPermanent } from './renewal'
+import { useProbeRange } from './use-probe-range'
+import { probeRangeBucketSec } from './probe-ranges'
 
 const RetroHistoryCharts = lazy(() => import('./RetroHistoryCharts').then((module) => ({ default: module.RetroHistoryCharts })))
-
-const cycleLabel = {
-  month: '月',
-  quarter: '季',
-  half_year: '半年',
-  year: '年',
-} as const
 
 function formatUptime(seconds: number): string {
   const d = Math.floor(seconds / 86400)
@@ -87,12 +83,13 @@ function RetroHostInfo({ server, networkSpeed }: { server: ProbeServer; networkS
 }
 
 function MonthlyTrafficCostItem({ server }: { server: ProbeServer }) {
+  if (isPermanent(server)) return <span className="detail-traffic-cost"><Database size={13} />每月每 TB 费用<strong>不适用（永久买断）</strong></span>
   const cost = computeMonthlyTrafficCost(server)
   const value = !cost ? '无法计算' : cost.perTB > 0 && cost.perTB < 0.01
     ? `< ${formatMoney(0.01, cost.currency, cost.isCny, true)} / TB / 月`
     : `${formatMoney(cost.perTB, cost.currency, cost.isCny, true)} / TB / 月`
   return (
-    <span className="detail-traffic-cost" title="按配置额度为每月额度估算：续费价格先按 1 / 3 / 6 / 12 个月折算，再除以计费额度（1 TB = 1024 GB）。单向或取最大值计费不自动翻倍。非月度流量套餐不适用；不按实际已用流量计算。">
+    <span className="detail-traffic-cost" title="按配置额度为每月额度估算：续费价格先按 1 / 3 / 6 / 12 / 24 / 36 个月折算，再除以计费额度（1 TB = 1024 GB）。单向或取最大值计费不自动翻倍。非月度流量套餐不适用；不按实际已用流量计算。">
       <Database size={13} />
       每月每 TB 费用
       <strong>{value}{cost && `（${cost.currency}）`}</strong>
@@ -101,17 +98,11 @@ function MonthlyTrafficCostItem({ server }: { server: ProbeServer }) {
   )
 }
 
-const RANGES = [
-  { key: '1h', label: '1 小时', bucketLabel: (index: number, count: number) => `-${(count - index) * 5}m` },
-  { key: '6h', label: '6 小时', bucketLabel: (index: number, count: number) => `-${(((count - index) * 10) / 60).toFixed(1)}h` },
-  { key: '24h', label: '24 小时', bucketLabel: (index: number, count: number) => `-${(((count - index) * 30) / 60).toFixed(0)}h` },
-] as const
-type RangeKey = (typeof RANGES)[number]['key']
 
 const colors = ['#8b5cf6', '#0ea5e9', '#22c55e', '#f59e0b', '#ef4444', '#ec4899']
 
 function PingTrendChart({ serverIndex, initial, targetKey, mode }: { serverIndex: number; initial: ProbePingSeries[]; targetKey: string; mode: 'latency' | 'loss' }) {
-  const [range, setRange] = useState<RangeKey>('1h')
+  const { range, setRange, options: RANGES } = useProbeRange()
   const [group, setGroup] = useState<'all' | 'cn' | 'idc'>('all')
   const [hidden, setHidden] = useState<Set<string>>(new Set())
   const [series, setSeries] = useState<ProbePingSeries[]>(initial)
@@ -147,6 +138,7 @@ function PingTrendChart({ serverIndex, initial, targetKey, mode }: { serverIndex
   useEffect(() => {
     const controller = new AbortController()
     setLoading(true)
+    setSeries([])
     void fetch(`/api/series?server=${serverIndex}&range=${range}&all=1`, {
       cache: 'no-store',
       signal: controller.signal,
@@ -162,11 +154,12 @@ function PingTrendChart({ serverIndex, initial, targetKey, mode }: { serverIndex
         }>
       })
       .then((payload) => {
+        if (controller.signal.aborted) return
         if (payload.success) {
           setSeries([...(payload.series ? [{ ...payload.series, key: '__avg__', label: '平均' }] : []), ...(payload.all_series || [])])
           setTimeMeta({
             generatedAt: payload.generated_at ?? Math.floor(Date.now() / 1000),
-            bucketSec: payload.bucket_sec ?? (range === '1h' ? 300 : range === '6h' ? 600 : 1800),
+            bucketSec: payload.bucket_sec ?? probeRangeBucketSec(range),
           })
         }
       })
@@ -500,11 +493,12 @@ export function ServerDetail({ server, index, onClose, showHealthScore = false, 
             </section>
 
             <div className="detail-col-stack">
-              {(server.expires_at || server.renewal_price !== undefined || server.renewal_price_cny !== undefined) && (
+              {(server.expires_at || server.renewal_price !== undefined || server.renewal_price_cny !== undefined || isPermanent(server)) && (
                 <section className="detail-panel">
                   <h3>到期与续费</h3>
                   <div className="detail-meta">
-                    {server.expires_at &&
+                    {isPermanent(server) && <span><CalendarClock size={13} />永久（一次性买断）</span>}
+                    {!isPermanent(server) && server.expires_at &&
                       (server.provider_url ? (
                         <a href={server.provider_url} target="_blank" rel="noopener noreferrer" className={expiring(server) || expired(server) ? 'warning' : ''} title={server.provider_name ? `前往 ${server.provider_name} 续费` : '前往服务商续费'}>
                           <CalendarClock size={13} />
