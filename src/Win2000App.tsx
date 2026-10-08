@@ -9,7 +9,7 @@ import { PasskeyLogin } from './PasskeyLogin'
 import { Twemoji } from './Twemoji'
 import { ServerDetail } from './ServerDetail'
 import { RetroProgress as Progress } from './RetroProgress'
-import { ReturnRouteBadges } from './App'
+import { ReturnRouteBadges } from './components/ServerVisuals'
 import { THEME_OPTIONS } from './theme-picker-model'
 
 type Skin = 'win31' | 'win2000' | 'xp' | 'aqua'

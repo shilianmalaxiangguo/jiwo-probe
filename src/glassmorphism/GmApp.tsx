@@ -34,21 +34,11 @@ import { Twemoji } from '../Twemoji'
 import { PasskeyLogin } from '../PasskeyLogin'
 import { CardPingGroups } from '../CardPingGroups'
 import { ConnectionHistory } from '../ConnectionHistory'
-import { ForwardOverview } from '../ForwardOverview'
 import './gm.css'
-import { ServerDetail } from '../ServerDetail'
 import { useVisitorInfo } from '../ran/hooks/useVisitorInfo'
-import {
-  ReturnRouteBadges,
-  SystemIcon,
-  TrafficDialog,
-  bytes,
-  expiring,
-  expired,
-  hasLeadingFlag,
-  pct,
-  regionFlag,
-} from '../App'
+import { ReturnRouteBadges, SystemIcon } from '../components/ServerVisuals'
+import { ForwardOverview, ServerDetail, TrafficDialog } from '../deferred'
+import { bytes, expiring, expired, hasLeadingFlag, pct, regionFlag } from '../server-format'
 import type { EnrichedServer } from '../use-probe'
 import { GmEarth, type GmRegion } from './GmEarth'
 
@@ -608,6 +598,7 @@ export default function GmApp({
 
       <main className="gm-main">
         <GmGeneralCards servers={servers} />
+        <ForwardOverview data={data} />
 
         <div className="gm-controls">
           <div className={`gm-search${search ? ' has-text' : ''}`}>
@@ -700,7 +691,6 @@ export default function GmApp({
         ) : (
           <div className="gm-empty">暂无符合条件的服务器</div>
         )}
-        <ForwardOverview data={data} />
       </main>
 
       <footer className="gm-footer">

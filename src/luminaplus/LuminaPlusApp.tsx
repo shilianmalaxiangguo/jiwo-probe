@@ -1,7 +1,7 @@
 import { memo, useMemo, useState } from 'react'
 import { Globe2, Grid3X3, LayoutGrid, List, Moon, Network, Rows3, ScrollText, Search, Sun } from 'lucide-react'
 import type { ProbePayload, ThemeName } from '../types'
-import { ThemeSelect } from '../App'
+import { ThemeSelect } from '../ThemePicker'
 import { PasskeyLogin } from '../PasskeyLogin'
 import { getThemeOverride, setLuminaPlusColorMode } from '../use-probe'
 import { LUMINAPLUS_COLOR_NAMES, nextLuminaPlusColor, type LuminaPlusColor } from './luminaplus-color'
@@ -11,7 +11,7 @@ import { parseLuminaPlusView, regionKey, type LuminaPlusView, type SpeedTrail } 
 import LuminaPlusOverview from './LuminaPlusOverview'
 import { useLuminaPlusSnapshot } from './use-luminaplus-snapshot'
 import { LuminaPlusLicenseFooter } from './LuminaPlusLicenseFooter'
-import { ForwardOverview } from '../ForwardOverview'
+import { ForwardOverview } from '../deferred'
 import './luminaplus.css'
 
 const sorts: Record<MiniSort, string> = { default: '默认排序', name: '名称 A–Z', cpu: 'CPU 占用 ↓', memory: '内存占用 ↓', traffic: '已用流量 ↓', latency: '延迟最低', expiry: '到期最近' }
@@ -51,6 +51,7 @@ const LuminaPlusHome = memo(function LuminaPlusHome({ data, trails, error, onThe
     </div></header>
     <main className="lp-main">
       <LuminaPlusOverview servers={servers} />
+      <ForwardOverview data={data} />
       <div className="lp-section-title"><h2>所有节点 <small>{visible.length} / {servers.length}</small></h2><span role="status" className={error ? 'has-error' : ''}><i />{error ? '连接中断，显示最近数据' : '数据已同步'}</span></div>
       <section className="lp-toolbar" aria-label="节点筛选"><label className="lp-search"><Search size={16} /><input type="search" aria-label="搜索节点" placeholder="搜索名称、地区、服务商…" value={query} onChange={event => setQuery(event.target.value)} /></label>
         <div className="lp-filter" aria-label="节点状态">{filters.map(item => <button key={item.key} type="button" aria-pressed={status === item.key} onClick={() => setStatus(item.key)}>{item.label}<small>{item.count}</small></button>)}</div>
@@ -60,7 +61,6 @@ const LuminaPlusHome = memo(function LuminaPlusHome({ data, trails, error, onThe
       </section>
       <div className="lp-region-filter" role="group" aria-label="地区筛选"><Globe2 size={15} /><button type="button" aria-pressed={!region} onClick={() => setRegion('')}>全部地区 <small>{servers.length}</small></button>{regions.map(([name, count]) => <button key={name} type="button" aria-pressed={region === name} onClick={() => setRegion(region === name ? '' : name)}>{name}<small>{count}</small></button>)}</div>
       <section className={`lp-nodes lp-view-${view}`} aria-label="节点列表">{visible.map(({ server, index }) => <LuminaPlusCard key={index} server={server} index={index} view={view} trail={trails[index]} />)}{!visible.length && <div className="lp-empty"><Search size={26} /><h3>{servers.length ? '没有匹配的节点' : '暂无服务器数据'}</h3><p>{servers.length ? '换个关键词，或清除筛选条件。' : '等待主控上报。'}</p>{!!servers.length && <button type="button" onClick={() => { setQuery(''); setStatus('all'); setProvider(''); setRegion('') }}>清除筛选</button>}</div>}</section>
-      <ForwardOverview data={data} />
       <footer className="lp-footer"><span>Powered by <a href="https://github.com/chnnic/jiwo-probe" target="_blank" rel="noreferrer">Jiwo Probe</a></span><a href="https://github.com/shanyang242/Komari-Theme-LuminaPlus" target="_blank" rel="noreferrer">Design inspired by LuminaPlus</a></footer>
     </main>
     <LuminaPlusLicenseFooter badges={data.license_badge} />

@@ -1,10 +1,71 @@
 # Jiwo Probe（鸡窝状态站）
 
-妙妙屋 X（MiaoMiaoWuX）独立服务器探针的**非官方魔改 fork**，基于 [mmwx-probe](https://github.com/mmwx-group/mmwx-probe)（功能基线 `e6f3a11`，2026-09-11；后续按本 fork 架构选择性移植。截至 2026-10-01，已接入主控多天历史、两年／三年／永久续费周期，并适配 Premium 白金可读性与筛选栏修复；保留 Jiwo 自定义布局与功能，不等同于完整合并上游）。
+妙妙屋 X（MiaoMiaoWuX）独立服务器探针的**非官方魔改 fork**，基于 [mmwx-probe](https://github.com/mmwx-group/mmwx-probe)（功能基线 `e6f3a11`，2026-09-11；后续按本 fork 架构选择性移植。截至 2026-10-06，已接入主控多天历史、两年／三年／永久续费周期，并适配 Premium 白金可读性与筛选栏修复；保留 Jiwo 自定义布局与功能，不等同于完整合并上游）。
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/chnnic/jiwo-probe)
 
+## 界面预览
+
+> 截图全部使用**虚拟演示数据**（服务器名、服务商、价格均为虚构），由 `npm run screenshots` 生成，不连接任何主控。点击图片查看原图。
+
+| LuminaPlus · 浅色 | LuminaPlus · 炭黑 |
+|---|---|
+| [<img src="docs/screenshots/luminaplus-light.png" alt="LuminaPlus 浅色" width="100%">](docs/screenshots/luminaplus-light.png) | [<img src="docs/screenshots/luminaplus-dark.png" alt="LuminaPlus 炭黑" width="100%">](docs/screenshots/luminaplus-dark.png) |
+| **LuminaPlus · Paper** | **Lite · 浅色** |
+| [<img src="docs/screenshots/luminaplus-paper.png" alt="LuminaPlus Paper" width="100%">](docs/screenshots/luminaplus-paper.png) | [<img src="docs/screenshots/lite.png" alt="Lite 浅色" width="100%">](docs/screenshots/lite.png) |
+| **Premium · 黑金** | **Premium · 白金** |
+| [<img src="docs/screenshots/premium.png" alt="Premium 黑金" width="100%">](docs/screenshots/premium.png) | [<img src="docs/screenshots/premium-platinum.png" alt="Premium 白金" width="100%">](docs/screenshots/premium-platinum.png) |
+| **Lumina** | **Glassmorphism** |
+| [<img src="docs/screenshots/lumina.png" alt="Lumina" width="100%">](docs/screenshots/lumina.png) | [<img src="docs/screenshots/glassmorphism.png" alt="Glassmorphism" width="100%">](docs/screenshots/glassmorphism.png) |
+| **Emerald** | **岚 · Ran** |
+| [<img src="docs/screenshots/emerald.png" alt="Emerald" width="100%">](docs/screenshots/emerald.png) | [<img src="docs/screenshots/ran.png" alt="Ran" width="100%">](docs/screenshots/ran.png) |
+| **经典 · 扁平（浅色）** | **手机端 · LuminaPlus Paper** |
+| [<img src="docs/screenshots/flat.png" alt="经典扁平主题" width="100%">](docs/screenshots/flat.png) | <p align="center"><a href="docs/screenshots/mobile-luminaplus.png"><img src="docs/screenshots/mobile-luminaplus.png" alt="手机端 LuminaPlus Paper" width="220"></a></p> |
+
 与原版的差异（定制增强）：
+
+### 解锁排行（2026-10-04）
+
+- 经典界面「多维榜单」新增「解锁」标签页，Emerald 侧栏新增「解锁排行」面板
+- 与主控解锁徽标同一口径：按已解锁项数排名，同数量比解锁率；仅自制剧算解锁，检测失败不计入分母，无检测数据的节点不参与排名。经典界面可展开查看流媒体 / AI / 交易所 / 其他各分类解锁数，Emerald 在副标题显示分类明细
+- 排名逻辑为共用的 `rankUnlocks`（[`src/leaderboards.ts`](src/leaderboards.ts)），两处界面一致
+
+### 岚 · Ran 中文界面（2026-10-04）
+
+- Ran 全部页面（总览 V1/V2、节点、驾驶舱、流量、账单、地图、节点抽屉、访客信息浮卡等）显示为中文；CPU、RAM、TCP、UDP、IP、UUID、单位、主题名与面板编号（如 `H01`、`CON · 10`）保留原样
+- 词典集中在 [`src/ran/i18n/zh.ts`](src/ran/i18n/zh.ts)（精确词条 + 带数字的模板），由 `translate-dom.ts` 在渲染后替换文本与 `title` / `placeholder` / `aria-label`，原版组件源码不改，便于同步 Komari-Ran-Theme；独立地图页 `map.html` 同样生效
+- 短中文标签自动不换行，避免窄方框里被挤成竖排；配色变体按钮显示中文名（夜、雾、烬……）
+- 浏览器 `localStorage` 设 `ran-lang=en` 可切回英文原版
+
+### 转发链状态总览（2026-10-04）
+
+与主控转发链列表、主控 CSS 同一口径，基于接口已下发的数据增强各主题共用的转发链视图（Premium 保留自己的转发页）：
+
+- **状态汇总**——标题栏显示「共 N 条 · 正常 · 偏慢 · 异常」；全部链路以卡片列出，异常置顶、偏慢其次，卡片按状态描边并写明原因（如「入口组 1/4 台探测异常」「中转组无可用服务器」）
+- **判断口径**——无有效延迟、入口或中转组无可用服务器、丢包 ≥ 50% 为异常；部分服务器探测异常、端到端 ≥ 160 ms、丢包 ≥ 5% 为偏慢。出口组不探测下一跳，不计入健康判断。延迟色阶沿用上游 Premium（<80 / <160 / ≥160 ms）。规则在 [`src/forward-model.ts`](src/forward-model.ts)
+- **拓扑着色**——组框显示「可用台数」并按状态描边，组间连线按延迟着色并标注毫秒，组内无可用服务器时显示红色虚线「中断」；手机端改为竖排，连线变为左侧竖条
+- **流动连线与实时网速**——组间连线显示沿转发方向流动的光点：速度按到下一组的延迟，密度按本组服务器的实时流量（来自快照的上下行），无流量时只留轨道，中断时红色虚线闪烁；拓扑中每台服务器下方显示实时 ⇅ 网速（悬停看上下行）。系统开启「减少动态效果」时停止动画
+- **链路卡片状态条**——每张卡片底部一排色块，每格一个 5 分钟探测段（正常 / 偏慢 / 异常 / 无数据），悬停看当时延迟与丢包，不用展开即可看出何时抖动
+- **选路段**——主控 v0.5.6-beta.4 起（#1136）接口下发 `routes` / `route_hop` / `route_policy` / `failover_ms`：分叉处并列各条路（绕经的组或直连、到出口延迟、丢包），在用的路高亮流动并标出哪几台在走，备用路变淡；入口成员标出当前走的路，服务器显示逐台丢包。旧版主控不含选路结构时，连续多个中转组仍提示可能是并行路线、端到端按各段相加可能偏高
+- **延迟与丢包同图**——端到端趋势图左轴为延迟（ms），右轴为丢包率（%，至少显示到 10%），红色虚线为每 5 分钟一段的丢包，悬停同时显示两项，便于看出丢包何时开始、何时恢复
+- **7 天流量**——展示接口一直下发但此前未使用的 `traffic`：每日合计柱状图与流量最多的 3 个节点；点击某天的柱子查看当天合计与各节点（入口 / 中转 / 出口及所属组）用量，再点一次或点「返回 7 天汇总」恢复，切换链路时自动回到汇总
+- **放在页首、默认折叠**——经典界面位于「地区分布 / 多维榜单」下方；LuminaPlus、Lite、Glassmorphism 位于概览下方；Emerald 位于左列概览下方（窄屏排在多维榜单之后）。折叠时标题栏仍显示状态汇总，访客展开或折叠后记在本浏览器
+- **深色可读性**——转发链与连接数历史的文字色改读 `--foreground`，修复 Lumina 黑金及经典主题深色模式下文字为深蓝、看不清的问题
+
+### 加载速度与实时连接（2026-10-03～04）
+
+- **首屏更轻**——趋势图、服务器详情、转发链视图（recharts）与经典主题回程勋章动画（lottie）改为用到时加载，首屏数据渲染后在浏览器空闲时预取；首屏 JS 从约 331 KB 降到约 120 KB（gzip）。入口统一在 [`src/deferred.tsx`](src/deferred.tsx)，测试会拦截首屏重新静态引入这两个库
+- **静态资源长缓存**——[`public/_headers`](public/_headers) 让带内容哈希的 `/assets/*` 缓存一年（`immutable`），表情、字体、解锁图标缓存 7 天
+- **实时推送只发变化**——ProbeHub 对声明 `/api/stream?delta=1` 的连接发送增量帧：解锁、回程、日流量与每条延迟线路的历史桶只传「不变 / 换最后一项 / 左移一格」，其余字段照常完整发送。线上 56 台实测每帧 472 KB → 约 112 KB（压缩后 57 KB → 18 KB）。新连接总是先收完整帧；旧页面与主控直连兜底仍收完整帧。编解码见 [`src/probe-delta.ts`](src/probe-delta.ts)
+- **后台暂停**——页面在后台超过 1 分钟即断开实时连接并停止轮询，避免遗忘的标签页让 ProbeHub 一直拉取主控；回到前台立即补帧并重连
+- **断线自动重连**——WebSocket 断开后按 2 / 5 / 15 / 30 秒退避重连，期间以 HTTP 轮询兜底，连上后自动停止轮询
+- **主控断联提示**——连接出错且数据超过 20 秒未更新时，经典界面各主题顶部提示「主控连接中断，正在显示 N 分钟前的数据，自动重试中」，恢复后自动消失（Ran 保留自身连接状态）
+- **减少动态效果**——系统开启「减少动态效果」时，许可证铭牌直接显示静态终态
+
+### 统一新版 Premium 地球仪（2026-10-02）
+
+- 所有已有地球视图统一复用上游 `7d8d8ef` 的 Premium 地球组件：Premium、Glassmorphism、Emerald 和通用主题不再各自保留旧版渲染器。原本没有地球的主题不新增地球入口。
+- 地区标签按真实经纬度排布，拖动时随地球重新定位；背面地区降亮度，标签限制在视口内。保留轨道流动光点、地区高亮与服务器数量，以及各主题的明暗配色和主控 `show_globe` 开关。不改许可证、卡片与历史数据。
 
 ### 主控连接数折线与转发链（2026-10-01）
 
@@ -71,7 +132,7 @@ Lumina 的普通浅色／暗色使用 Claude Paper 纸面布局与莫兰迪配�
   - 节点卡：金工质感全套（双 hairline 倒角、凹陷读数窗、蚀刻铭牌字、BlockMeter 分段条、状态扫光），出站/入站显示**当前周期流量**（周期上行/下行，物理口径）
   - NodeDetail 详情页、Traffic 全网流量、Billing 订阅汇总（月成本 / 年估算 / 到期提醒 / 多币种 + 汇率）、访客信息浮卡（每会话一次）
   - **10 个主题变体**：墨石深（night）/ 雾色浅（mist）/ 烬枣红（ember）/ 樱粉（sakura）/ 薰衣草（lavender）等，右上角切换
-  - 懒加载分包（首屏 index 196KB 不变），访客接口走 CF 请求头（零第三方依赖）
+  - 懒加载分包（Ran 独立分包，不增加其他主题的首屏体积），访客接口走 CF 请求头（零第三方依赖）
 - **Lumina 主题**（第 5 主题，`pixel → flat → anime → glass → lumina → ran` 循环）——保留 Komari Theme LuminaPlus 的信息布局，并移植主控白金/黑金视觉：无外框不透明卡片、关闭动态背景模糊、轻量静态阴影、无边框顶栏、未选中按钮无金框，详情页和弹窗保留 1px 结构线；健康区延迟/丢包柱条热力分段（与数值同色）、流量脉冲点击弹日流量趋势图、延迟/丢包柱条点击弹完整趋势图、延迟展示内容可选（平均或任意线路）、上下行箭头图标化（悬停 title 提示）、**三网回程勋章扁平化**（去掉系统金/银拟物动画勋章，改细边框低饱和 chip，CN2 GIA / 9929 / CMIN2 等优质线路金色点缀，详情页同步同款）
   - **四态配色循环**（Gem 图标切换：浅 → 暗 → 黑金 → 白金）——黑金为 Lumina 专属配色：深墨绿黑底 + 金色描边/光晕 + 米白文字，顶部金色光晕；白金移植自 license.miaomiaowu.net premium light（米白底 + 暗金 #a87c22）；切换记忆在浏览器（localStorage），刷新保持
   - **黑金/白金金色体系**——非语义色收敛金色：进度条/脉冲条/剩余流量条/延迟与丢包率数值与柱条/资产总揽金额（`--accent`）/许可证徽章/spark 星光统一金色；黑金/白金两态的**进度条统一使用原版 premium 黑金渐变**（深金 `#8f651d` → 亮金 `#e5c367`，含二级详情页 .meter）；进度条轨道用详情页同款 `color-mix(border 70%)` 暗轨道（全主题自适应）；状态语义色保留（绿在线/红离线/黄到期），趋势图多线区分色保留
@@ -248,7 +309,7 @@ PROBE_PING_DEFAULT_TARGETS=内地延迟，海外延迟
 ### ProbeHub 主控降载
 
 - **全局单采集器**——使用固定名称的 Cloudflare Durable Object 聚合所有访客连接；无论同时打开多少页面，主控正常情况下只承受一个 ProbeHub 的定时快照请求，再由 ProbeHub 将实时帧广播给访客
-- **3 秒实时刷新**——ProbeHub 默认每 3 秒从主控获取一次完整快照；`/api/probe` 优先复用最近快照并叠加 3 秒边缘微缓存，避免页面首屏和轮询重复触发主控生成数据
+- **3 秒实时刷新**——ProbeHub 默认每 3 秒从主控获取一次完整快照，向支持的页面广播增量帧（见上文「实时推送只发变化」）；`/api/probe` 优先复用最近快照并叠加 3 秒边缘微缓存，避免页面首屏和轮询重复触发主控生成数据
 - **可配置降载**——运行时变量 `PROBE_POLL_INTERVAL_SECONDS` 默认为 `3`；需要降低主控数据库压力时设为 `5` 即可恢复 5 秒采集，无需修改代码
 - **自动恢复与回退**——单次快照失败不会停止后续采集；Hub 异常时 HTTP 请求自动回退原有直连，不牺牲页面可用性
 - **按需运行**——首名访客进入时启动采集，最后一名访客离开 30 秒后自动停止，降低 Durable Object 空闲时长
@@ -408,19 +469,31 @@ npm run dev
 
 访问 `http://localhost:5173`。Vite 会把 `/api/*` 转发到本地 Worker 的 `8787` 端口。
 
+### 公共模块与主题边界
+
+- `src/server-format.ts`：共用流量格式、地区显示、到期判断及图表格式化。
+- `src/server-health.ts`：健康评分与相关资源/延迟计算，不依赖 Premium 页面。
+- `src/charts/`：共用流量、延迟、系统历史图及横轴交互容器。
+- `src/components/`：共用系统图标、回程标签、Lumina 状态条与许可证页尾；许可证内容仍只从原配置读取。
+- 主题和详情页直接引用公共模块，不从 `App.tsx` 或 `PremiumProbePage.tsx` 导入工具或组件。Premium 保持动态加载，样式随主题加载。
+
+`npm test` 包含公共计算边界与静态依赖检查，防止重新引入页面反向引用和循环依赖。调整模块后还需执行 `npm run build`，并检查桌面/手机下的主题切换、详情弹窗与图表。此阶段仅整理依赖，不改变主控数据、计费口径、许可证内容或 Ran。
+
 ## 常用命令
 
 ```bash
 npm run dev        # 启动 Vite 开发服务器
 npm run typecheck  # TypeScript 类型检查
+npm test           # 业务逻辑与模块依赖回归测试
 npm run build      # 生成 dist 生产文件
 npm run preview    # 本地预览生产构建
 npm run deploy     # 构建并部署到 Cloudflare Workers
+npm run screenshots # 用虚拟数据重新生成 README 截图（需本机安装 Chrome，可用 CHROME_PATH 指定）
 ```
 
 ## 更新与密钥轮换
 
-更新代码后执行 `npm ci && npm run deploy`。首次更新到带 ProbeHub 的版本时，Wrangler 会自动创建和绑定 Durable Object，无需手动配置；Cloudflare 网页部署同样会按仓库中的配置自动处理。轮换密钥时，先在主控生成新密钥，立即执行 `npx wrangler secret put PROBE_TOKEN` 并重新部署；在 Worker 更新完成前，探针可能短暂返回 `404`。主控只保存密钥的 SHA-256 哈希，无法找回旧密钥。
+更新代码后执行 `npm ci && npm run deploy`。如果想让脚本在上传后确认线上已换成新版本，可以带上站点地址：`PROBE_VERIFY_URL=https://你的探针域名 npm run deploy`，它会等待最多 90 秒，直到线上 `index.html` 和本地构建一致，否则报错；不设置时跳过。首次更新到带 ProbeHub 的版本时，Wrangler 会自动创建和绑定 Durable Object，无需手动配置；Cloudflare 网页部署同样会按仓库中的配置自动处理。轮换密钥时，先在主控生成新密钥，立即执行 `npx wrangler secret put PROBE_TOKEN` 并重新部署；在 Worker 更新完成前，探针可能短暂返回 `404`。主控只保存密钥的 SHA-256 哈希，无法找回旧密钥。
 
 ## 故障排查
 
@@ -435,9 +508,9 @@ npm run deploy     # 构建并部署到 Cloudflare Workers
 
 ## 上游同步
 
-本 fork 的功能基线已提升到上游 `e6f3a11`（2026-09-11）。`ab9233d` 至 `e6f3a11` 的外置探针 Passkey 登录、Premium 续费时间轴点击、移动端双行顶栏和白金三视图对比度修复已按本 fork 架构移植；Passkey Worker 只放行两条固定 POST 鉴权路径，不携带只读 `PROBE_TOKEN`。此前 `d706d7e`、`31f7a4b`、`bd651cb`、`f6fc04b` 的转发链网络状况能力也已移植：优先读取 WS `payload.forward`、HTTP 兜底、按服务器/转发链固定位置切换、浅色主题与布局抖动修复、按组切换的每日流量堆叠柱状图。`6221dd1` 的原始上下行趋势、计费口径工具、`traffic_stats_mode` 修正、服务器旗标和动态地区图同样已吸收；与本地九套主题、Ran/Premium 定制大面积冲突的结构性重构不会直接覆盖，而是逐项移植功能，避免界面回退。更早吸收：`8d82a8b` 移除登录；`ce624cf` twemoji 本地化（public/twemoji/ ~3650 个本地 SVG，零外部依赖）；`3ed41ca` Premium 黑金 PRO 主题；`be3d03c`（表格网速列纵向 + ping-pair 单列）经评估与 fork 三视图布局不兼容，跳过；`5ce90c0` 探针表格优化（表格流量列增强）；基线 `2dc05b3`（2026-08-10）。后续本地迭代：ProbeHub 全局连接聚合、流量计费口径 drawer、趋势弹窗三线切换与手机端免滚动撑满、卡片单向计费修正、白金水印等。若上游有更新，可手动合并（注意 `src/styles.css`、`src/types.ts`、`src/use-probe.ts` 有大量本地定制，合并可能冲突，需逐一确认）：
+本 fork 的功能基线已提升到上游 `e6f3a11`（2026-09-11）。`ab9233d` 至 `e6f3a11` 的外置探针 Passkey 登录、Premium 续费时间轴点击、移动端双行顶栏和白金三视图对比度修复已按本 fork 架构移植；Passkey Worker 只放行两条固定 POST 鉴权路径，不携带只读 `PROBE_TOKEN`。2026-10-03 继续跟进上游 10-01 的提交：`d26cf7b` 已移植（环上标签上限改为 `MAX_ORBIT_LABELS`，按最小间隔计算，Premium「地区状态」列出全部地区并在超高时滚动；拖动时标签平滑过渡，引线一直画到标签框；白金主题下引线和背面标签加深）；`a677a42` 的连接数折线悬停在本 fork 中已有竖线和提示框，这次补上 TCP/UDP 两个圆点；`343e258` 跳过：本 fork 卡片没有被裁切的悬停说明，并且有意保留「1000 GB」写法；`6834eb6` 跳过：`RegionGlobe` 已统一复用 Premium 地球组件。2026-10-06 移植 `c6839d2`（主控 #1136 选路段）：Premium 转发页的探测详情与组延迟详情改为并列各条路、入口成员标出走的路、服务器显示丢包，并为白金配色补上深色文字与暗金；各主题共用的转发链视图此前已按同一接口实现，这次补上「按顺序故障转移」「按权重分流」两种策略名。2026-10-08 补记 09-20 至 09-28 之间未登记的上游提交：`efccc8e`、`35f9cb1`（三网延迟分电信 / 联通 / 移动三行及色块条）有意不兼容，跳过；`9f6c90f` 的地球环上标签布局已随 `d26cf7b` 吸收，其中的三网部分同样跳过；`ca2b0f2`、`bf6e663`、`2ba3335` 的解锁检测（卡片徽标、流媒体 / AI / 其他分类面板、信息类服务只显示地区）已由本地 `unlocks.ts`、`ServerCapabilities.tsx` 实现；`8bee333`、`0b7f9ca` 的 TCP/UDP 连接数、连接数折线、按数据保存天数看多天曲线和永久续费本地已有；`ce5b7c3` 由全局网速单位 `PROBE_NETWORK_SPEED_UNIT` 统一换算覆盖；`e7168e3`、`7d8d8ef` 的 Premium 亮色对比度与筛选栏由本地白金配色规则覆盖（本地没有上游的 `traffic-accounting` 区块）。同日补上 `f6fc04b` 引入、本 fork 漏掉的 `/api/forward` Worker 路由，未知 `/api/*` 改为返回 404。此前 `d706d7e`、`31f7a4b`、`bd651cb`、`f6fc04b` 的转发链网络状况能力也已移植：优先读取 WS `payload.forward`、HTTP 兜底、按服务器/转发链固定位置切换、浅色主题与布局抖动修复、按组切换的每日流量堆叠柱状图。`6221dd1` 的原始上下行趋势、计费口径工具、`traffic_stats_mode` 修正、服务器旗标和动态地区图同样已吸收；与本地九套主题、Ran/Premium 定制大面积冲突的结构性重构不会直接覆盖，而是逐项移植功能，避免界面回退。更早吸收：`8d82a8b` 移除登录；`ce624cf` twemoji 本地化（public/twemoji/ ~3650 个本地 SVG，零外部依赖）；`3ed41ca` Premium 黑金 PRO 主题；`be3d03c`（表格网速列纵向 + ping-pair 单列）经评估与 fork 三视图布局不兼容，跳过；`5ce90c0` 探针表格优化（表格流量列增强）；基线 `2dc05b3`（2026-08-10）。后续本地迭代：ProbeHub 全局连接聚合、流量计费口径 drawer、趋势弹窗三线切换与手机端免滚动撑满、卡片单向计费修正、白金水印等。上游有更新时逐项移植、不整体合并（`src/styles.css`、`src/types.ts`、`src/use-probe.ts`、`src/PremiumProbePage.tsx` 有大量本地定制），流程见 [AGENTS.md](AGENTS.md)：
 
 ```bash
-git fetch origin
-git merge origin/main
+git fetch official
+git log --oneline c6839d2..official/main
 ```

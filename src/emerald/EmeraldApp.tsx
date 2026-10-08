@@ -37,13 +37,12 @@ import {
   Table2,
   Waves,
   X,
+  LockOpen,
 } from 'lucide-react'
 import { RegionGlobe } from '../RegionGlobe'
-import { ServerDetail } from '../ServerDetail'
-import { TrafficDialog } from '../App'
 import { CardPingGroups } from '../CardPingGroups'
 import { ConnectionHistory } from '../ConnectionHistory'
-import { ForwardOverview } from '../ForwardOverview'
+import { ForwardOverview, ServerDetail, TrafficDialog } from '../deferred'
 import { Twemoji } from '../Twemoji'
 import { PasskeyLogin } from '../PasskeyLogin'
 import { flagToCountryCode } from '../country-flag'
@@ -51,7 +50,7 @@ import type { ProbePayload, ProbeServer, ThemeName } from '../types'
 import type { EnrichedServer } from '../use-probe'
 import { getDarkOverride, setDarkOverride } from '../use-probe'
 import { computeRemainingValue, formatMoney } from '../value'
-import { EMERALD_LEADERBOARD_ORDER, rankConnectionCounts, type EmeraldRankingType } from '../leaderboards'
+import { EMERALD_LEADERBOARD_ORDER, rankConnectionCounts, rankUnlocks, type EmeraldRankingType } from '../leaderboards'
 import { connectionCount } from '../unlocks'
 import './emerald.css'
 
@@ -220,6 +219,7 @@ const RANKING_META = {
   tcp: { title: 'TCP 连接数', nav: 'TCP', chip: '整机连接', icon: <Cable size={17} /> },
   udp: { title: 'UDP 连接数', nav: 'UDP', chip: 'SOCKET', icon: <Network size={17} /> },
   quality: { title: '网络质量', nav: '网络', chip: '延迟 + 丢包', icon: <Waves size={17} /> },
+  unlock: { title: '解锁排行', nav: '解锁', chip: '已解锁 / 有效', icon: <LockOpen size={17} /> },
   uptime: { title: '在线时长', nav: '在线', chip: 'UPTIME', icon: <Clock3 size={17} /> },
 }
 
@@ -240,6 +240,15 @@ function RankingPanel({ servers, type, openServer }: { servers: EnrichedServer[]
         value: connectionCount(value),
         sub: `${type === 'tcp' ? '整机已建立连接' : '整机 UDP socket'}${server.online ? '' : ' · 离线最近值'}`,
         score: (value / max) * 100,
+      }))
+    }
+    if (type === 'unlock') {
+      // 与主控解锁徽标同一口径；分类明细放在副标题里
+      return rankUnlocks(servers).map(({ server, unlocked, total, ratio, categories }) => ({
+        server,
+        value: `${unlocked}/${total}`,
+        sub: categories.map((category) => `${category.label} ${category.unlocked}/${category.total}`).join(' · '),
+        score: ratio * 100,
       }))
     }
     if (type === 'uptime') {
@@ -303,6 +312,7 @@ function RankingPanel({ servers, type, openServer }: { servers: EnrichedServer[]
         <span className="emerald-panel-chip">{meta.chip}</span>
       </header>
       {(type === 'tcp' || type === 'udp') && <p className="emerald-rank-note">非代理用户数；未上报不参与排名</p>}
+      {type === 'unlock' && <p className="emerald-rank-note">仅自制剧算解锁，检测失败不计入；无检测数据不参与排名</p>}
       <ol>
         {visibleRows.map((row, index) => {
           const serverIndex = servers.indexOf(row.server)
@@ -636,6 +646,7 @@ export default function EmeraldApp({ data, onThemeChange }: { data: ProbePayload
         <div className="emerald-dashboard">
           <div className="emerald-primary-column">
             <Overview servers={servers} />
+            <ForwardOverview data={data} />
 
             <div className="emerald-region-bar" aria-label="地区筛选">
               <button type="button" className={region === 'all' ? 'active' : ''} onClick={() => setRegion('all')}><Globe2 size={14} />全部 <b>{servers.length}</b></button>
@@ -659,7 +670,6 @@ export default function EmeraldApp({ data, onThemeChange }: { data: ProbePayload
             {EMERALD_LEADERBOARD_ORDER.map(type => <RankingPanel key={type} servers={servers} type={type} openServer={openDetail} />)}
           </aside>
         </div>
-        <ForwardOverview data={data} />
       </main>
 
       <footer className="emerald-footer">

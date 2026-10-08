@@ -9,7 +9,6 @@ import {
   ArrowUp,
   CalendarClock,
   CheckCircle2,
-  ChevronDown,
   ChevronRight,
   CreditCard,
   Crown,
@@ -42,17 +41,13 @@ import { getThemeOverride, parseThemeName } from './use-probe'
 import { EXTRA_LICENSE_BADGES, HEADER_LICENSE_BADGES } from './license-badges'
 import { FLAG_OPTIONS } from './country-flag'
 import { displayServerName } from './server-name'
-import {
-  dailyTrafficRows,
-  hasTrafficPeriod,
-  trafficRuleLabel,
-  type TrafficRange,
-} from './traffic-display'
+import { dailyTrafficRows, hasTrafficPeriod, trafficRuleLabel, type TrafficRange } from './traffic-display'
 import { BlackGoldGlobe, type PremiumProbeRegion } from './BlackGoldGlobe'
 import { useProbeRange } from './use-probe-range'
 import { probeBucketLabel } from './probe-ranges'
 import { CYCLE_LABELS, CYCLE_MONTHS, expiryTimestamp, isPermanent } from './renewal'
 import './premium-probe.css'
+import { serverHealth, averageLatency, percentage, resourcePercentage } from './server-health'
 
 type ProbeData = ProbePayload
 
@@ -314,26 +309,6 @@ function formatAxisDateTime(unixSeconds: number): string {
   }).format(new Date(unixSeconds * 1000))
 }
 
-function averageLatency(server: ProbeServer): number | undefined {
-  const values = (server.ping || [])
-    .map((series) => series.current_ms)
-    .filter((value) => value >= 0)
-  if (!values.length) return undefined
-  return Math.round(
-    values.reduce((total, value) => total + value, 0) / values.length
-  )
-}
-
-function percentage(used?: number, total?: number): number {
-  if (!total || total <= 0) return 0
-  return Math.min(100, Math.max(0, (Number(used || 0) / total) * 100))
-}
-
-function resourcePercentage(used?: number, total?: number): number | undefined {
-  if (used === undefined || !total) return undefined
-  return percentage(used, total)
-}
-
 function serverRegionKey(server: ProbeServer): string {
   return (
     server.region_country ||
@@ -360,88 +335,6 @@ function buildRegions(servers: ProbeServer[]): PremiumProbeRegion[] {
       online: group.filter((server) => server.online).length,
     }
   })
-}
-
-export type HealthResult = {
-  score: number
-  label: '卓越' | '良好' | '注意' | '异常'
-  tone: 'excellent' | 'good' | 'warning' | 'critical'
-  issues: string[]
-}
-
-export function serverHealth(server: ProbeServer): HealthResult {
-  if (!server.online) {
-    return { score: 0, label: '异常', tone: 'critical', issues: ['服务器离线'] }
-  }
-  let score = 100
-  const issues: string[] = []
-  const mem = resourcePercentage(server.mem_used, server.mem_total)
-  const disk = resourcePercentage(server.disk_used, server.disk_total)
-  const resources = [
-    ['CPU', server.cpu_pct],
-    ['内存', mem],
-    ['硬盘', disk],
-  ] as const
-  for (const [name, value] of resources) {
-    if (value === undefined) continue
-    if (value >= 90) {
-      score -= 18
-      issues.push(`${name}压力过高`)
-    } else if (value >= 75) {
-      score -= 9
-      issues.push(`${name}压力偏高`)
-    }
-  }
-  const latency = averageLatency(server)
-  const losses = (server.ping || [])
-    .map((item) => item.loss_pct)
-    .filter((value) => value >= 0)
-  const loss = losses.length
-    ? losses.reduce((total, value) => total + value, 0) / losses.length
-    : undefined
-  if (latency !== undefined && latency >= 250) {
-    score -= 18
-    issues.push('网络延迟过高')
-  } else if (latency !== undefined && latency >= 120) {
-    score -= 8
-    issues.push('网络延迟偏高')
-  }
-  if (loss !== undefined && loss >= 10) {
-    score -= 20
-    issues.push('丢包严重')
-  } else if (loss !== undefined && loss >= 3) {
-    score -= 9
-    issues.push('存在丢包')
-  }
-  if (server.traffic_limit) {
-    const used = server.traffic_used ?? server.traffic_used_total ?? 0
-    const quota = percentage(used, server.traffic_limit)
-    if (quota >= 95) {
-      score -= 16
-      issues.push('流量额度即将耗尽')
-    } else if (quota >= 80) {
-      score -= 7
-      issues.push('流量额度偏高')
-    }
-  }
-  if (server.expires_at && !isPermanent(server)) {
-    const days = Math.ceil(
-      (new Date(`${server.expires_at}T00:00:00`).getTime() - Date.now()) /
-        86400000
-    )
-    if (days < 0) {
-      score -= 20
-      issues.push('服务器已到期')
-    } else if (days <= 14) {
-      score -= 8
-      issues.push('服务器即将到期')
-    }
-  }
-  score = Math.max(0, Math.round(score))
-  if (score >= 90) return { score, label: '卓越', tone: 'excellent', issues }
-  if (score >= 75) return { score, label: '良好', tone: 'good', issues }
-  if (score >= 55) return { score, label: '注意', tone: 'warning', issues }
-  return { score, label: '异常', tone: 'critical', issues }
 }
 
 function displayReturnRoute(route: string): string {
@@ -1700,6 +1593,46 @@ function ForwardTrafficChart({ traffic }: { traffic: ForwardChainTraffic }) {
   );
 }
 
+const routePolicyLabel: Record<string, string> = {
+  lowest_latency: "最低延迟优先",
+  failover: "按顺序故障转移",
+  weighted: "按权重分流",
+};
+
+/** 选路段:分叉那组到下一组之间并行的几条路,标出在用的那条(主控 #1136) */
+function ForwardRoutes({ chain }: { chain: ForwardChainData }) {
+  const routes = chain.routes ?? [];
+  return (
+    <div className="rroutes">
+      <div className="rr-h">
+        选路 · {routePolicyLabel[chain.route_policy ?? ""] ?? chain.route_policy}
+        {chain.failover_ms ? ` · 故障转移 ${chain.failover_ms}ms` : ""}
+      </div>
+      {routes.map((r) => (
+        <div
+          key={r.name}
+          className={`rr${r.selected ? " is-on" : ""}`}
+          title={
+            r.selected_by?.length
+              ? `正在走:${r.selected_by.join("、")}`
+              : undefined
+          }
+        >
+          <span className="rn">{r.name}</span>
+          <span className="rv">
+            {r.via.length ? `经 ${r.via.join(" → ")}` : "直连"}
+          </span>
+          <span className={`rl ${forwardLatencyClass(r.latency_ms)}`}>
+            {r.latency_ms > 0 ? `${r.latency_ms} ms` : "—"}
+          </span>
+          {r.loss_pct > 0 && <span className="rlo">丢 {r.loss_pct}%</span>}
+          {r.selected && <span className="ron">在用</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ForwardChainView({ wsChains }: { wsChains?: ForwardChainData[] }) {
   // 优先用 WS payload 下发的转发链数据(实时);未走 WS 才拉 /api/forward 兜底。
   const hasWS = wsChains !== undefined;
@@ -1789,7 +1722,11 @@ function ForwardChainView({ wsChains }: { wsChains?: ForwardChainData[] }) {
             {chain.end_to_end_ms}
             <span className="u">ms</span>
           </div>
-          <div className="foot">入口 → 出口 · 各组均值之和</div>
+          <div className="foot">
+            {chain.routes?.length
+              ? "入口 → 出口 · 按在用的路"
+              : "入口 → 出口 · 各组均值之和"}
+          </div>
         </div>
         <div className="stat is-ok">
           <div className="k">平均丢包</div>
@@ -1809,6 +1746,7 @@ function ForwardChainView({ wsChains }: { wsChains?: ForwardChainData[] }) {
           <div className="foot">
             入口 {roleTally.entry || 0} · 中转 {roleTally.mid || 0} · 出口{" "}
             {roleTally.exit || 0}
+            {chain.routes?.length ? ` · 选路 ${chain.routes.length} 条` : ""}
           </div>
         </div>
         <div className="stat is-gold">
@@ -1838,13 +1776,16 @@ function ForwardChainView({ wsChains }: { wsChains?: ForwardChainData[] }) {
                   <span className="gname">{group.name}</span>
                   <span className="gmeta">{group.servers.length} 节点</span>
                 </div>
-                {index < chain.groups.length - 1 && (
-                  <div className="rlink">
-                    <span className="lat">{group.to_next_ms} ms</span>
-                    <span className="arw" />
-                    <span className="lbl">→ 下一组</span>
-                  </div>
-                )}
+                {index < chain.groups.length - 1 &&
+                  (chain.routes?.length && chain.route_hop === index ? (
+                    <ForwardRoutes chain={chain} />
+                  ) : (
+                    <div className="rlink">
+                      <span className="lat">{group.to_next_ms} ms</span>
+                      <span className="arw" />
+                      <span className="lbl">→ 下一组</span>
+                    </div>
+                  ))}
               </Fragment>
             ))}
           </div>
@@ -1882,7 +1823,11 @@ function ForwardChainView({ wsChains }: { wsChains?: ForwardChainData[] }) {
                       />
                       <span className="sn">
                         <Twemoji>{srv.name}</Twemoji>
+                        {srv.route && <span className="srt">{srv.route}</span>}
                       </span>
+                      {(srv.loss_pct ?? 0) > 0 && (
+                        <span className="sloss">丢 {srv.loss_pct}%</span>
+                      )}
                       <span
                         className={`slat ${forwardLatencyClass(srv.to_next_ms)}`}
                       >
@@ -1891,13 +1836,16 @@ function ForwardChainView({ wsChains }: { wsChains?: ForwardChainData[] }) {
                     </div>
                   ))}
                 </div>
-                {index < chain.groups.length - 1 && (
-                  <div className="tconn">
-                    <span className="cl">组间</span>
-                    <span className="cv">{group.to_next_ms} ms</span>
-                    <span className="cline" />
-                  </div>
-                )}
+                {index < chain.groups.length - 1 &&
+                  (chain.routes?.length && chain.route_hop === index ? (
+                    <ForwardRoutes chain={chain} />
+                  ) : (
+                    <div className="tconn">
+                      <span className="cl">组间</span>
+                      <span className="cv">{group.to_next_ms} ms</span>
+                      <span className="cline" />
+                    </div>
+                  ))}
               </Fragment>
             ))}
           </div>
@@ -3334,7 +3282,7 @@ export function PremiumProbePage({
                     <BlackGoldGlobe regions={regions} />
                     <aside>
                       <h3>地区状态</h3>
-                      {regions.slice(0, 7).map((item) => (
+                      {regions.map((item) => (
                         <button
                           type='button'
                           key={item.code}

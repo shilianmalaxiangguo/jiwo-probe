@@ -1,6 +1,8 @@
 import { parsePingGroupConfig } from '../src/ping-groups'
 import { parseNetworkSpeedUnit } from '../src/network-speed'
 import { parseShowConnectionChart } from '../src/connection-chart'
+import { encodeProbeDelta } from '../src/probe-delta'
+import type { ProbePayload } from '../src/types'
 
 interface Env {
   ASSETS: Fetcher
@@ -27,6 +29,8 @@ const HUB_MIN_POLL_MS = 3_000
 const HUB_MAX_POLL_MS = 60_000
 const HUB_NAME = 'global'
 const HUB_CLIENT_TAG = 'probe-client'
+// 声明支持增量帧的连接（/api/stream?delta=1）；未声明的旧页面始终收完整帧。
+const HUB_DELTA_TAG = 'probe-delta'
 const ESTIMATED_TRAFFIC_STORAGE_KEY = 'probe-estimated-daily-traffic-v1'
 const ESTIMATED_TRAFFIC_RETENTION_DAYS = 30
 const ESTIMATED_TRAFFIC_FLUSH_MS = 5 * 60 * 1_000
@@ -157,6 +161,8 @@ const routes: Record<string, string> = {
   '/api/probe': '/api/public/probe-servers',
   '/api/series': '/api/public/probe-series',
   '/api/stream': '/api/public/probe-ws',
+  // Premium 转发页在 WS 未带 forward 时的 HTTP 兜底（与上游 f6fc04b 一致）。
+  '/api/forward': '/api/public/probe-forward',
 }
 
 // Passkey 是探针唯一允许向主控 POST 的公开鉴权端点；不携带只读 PROBE_TOKEN。
@@ -313,6 +319,8 @@ export class ProbeHub implements DurableObject {
   private idleTimer: ReturnType<typeof setTimeout> | null = null
   private pollTimer: ReturnType<typeof setInterval> | null = null
   private latestPayload: string | null = null
+  // 上一次广播的解析结果，作为增量帧的基准；Durable Object 休眠后清空，下一帧自动改发完整帧。
+  private latestParsed: ProbePayload | null = null
   private latestAt = 0
   private snapshotRequest: Promise<string> | null = null
   private estimatedTraffic: EstimatedTrafficState = {}
@@ -373,12 +381,15 @@ export class ProbeHub implements DurableObject {
 
     const pair = new WebSocketPair()
     const [client, server] = Object.values(pair)
-    this.state.acceptWebSocket(server, [HUB_CLIENT_TAG])
+    const delta = new URL(request.url).searchParams.get('delta') === '1'
+    this.state.acceptWebSocket(server, delta ? [HUB_CLIENT_TAG, HUB_DELTA_TAG] : [HUB_CLIENT_TAG])
     this.cancelIdleClose()
 
     if (this.latestPayload && Date.now() - this.latestAt <= HUB_SNAPSHOT_MAX_AGE_MS) {
       server.send(this.latestPayload)
     } else {
+      // 还没收到过完整帧：下一次广播必须给它完整帧，不能发增量
+      server.serializeAttachment({ needsFull: true })
       this.state.waitUntil(this.seedClientsFromSnapshot())
     }
     this.startPolling()
@@ -573,11 +584,27 @@ export class ProbeHub implements DurableObject {
   }
 
   private rememberAndBroadcast(payload: string): void {
+    const previous = this.latestParsed
+    let parsed: ProbePayload | null = null
+    try {
+      parsed = JSON.parse(payload) as ProbePayload
+    } catch {
+      // 非 JSON 时只发完整帧
+    }
     this.latestPayload = payload
+    this.latestParsed = parsed
     this.latestAt = Date.now()
+    let deltaPayload: string | null = null
+    if (parsed && previous && this.state.getWebSockets(HUB_DELTA_TAG).length) {
+      const frame = encodeProbeDelta(parsed, previous)
+      if (frame) deltaPayload = JSON.stringify(frame)
+    }
     for (const client of this.clients()) {
       try {
-        client.send(payload)
+        const needsFull = (client.deserializeAttachment() as { needsFull?: boolean } | null)?.needsFull === true
+        if (needsFull) client.serializeAttachment(null)
+        const wantsDelta = deltaPayload !== null && !needsFull && this.state.getTags(client).includes(HUB_DELTA_TAG)
+        client.send(wantsDelta ? deltaPayload! : payload)
       } catch {
         try {
           client.close(1011, 'broadcast failed')
@@ -675,7 +702,16 @@ export default {
     }
 
     const target = upstreamURL(request, env)
-    if (!target) return env.ASSETS.fetch(request)
+    if (!target) {
+      // 未知的 /api/* 明确返回 404，不回落到 SPA 首页，免得前端把 HTML 当 JSON 解析。
+      if (incoming.pathname.startsWith('/api/')) {
+        return new Response('Not found', {
+          status: 404,
+          headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' },
+        })
+      }
+      return env.ASSETS.fetch(request)
+    }
     if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 })
     if (!env.PROBE_TOKEN) {
       return new Response('Probe access secret is not configured', { status: 503 })
@@ -689,7 +725,7 @@ export default {
 
     if (incoming.pathname === '/api/stream') {
       try {
-        const hubResponse = await hubStub(env).fetch(new Request('https://probe-hub.internal/stream', {
+        const hubResponse = await hubStub(env).fetch(new Request(`https://probe-hub.internal/stream${incoming.search}`, {
           method: 'GET',
           headers: request.headers,
         }))
