@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { chainStatus, chainTraffic, chainTrafficDay, flowDuration, flowLevel, formatGb, forwardSummary, hopTone, latencyTone, mayHaveRouteSelection, routeFork, sortChains, trendCells } from './forward-model.ts'
+import { availabilityCells, availabilityPct, chainLiveSpeed, formatAvailability, formatJitter, chainStatus, chainTraffic, chainTrafficDay, flowDuration, flowLevel, formatGb, FORWARD_TRAFFIC_NOTE, FORWARD_TRAFFIC_SETTLE_MINUTES, forwardSummary, hopTone, latencyTone, mayHaveRouteSelection, routeFork, sortChains, trendCells } from './forward-model.ts'
 
 test('选路段：按 route_hop 分叉，带策略说明与各路状态；有 routes 时不再提示可能是选路', () => {
   const chain = {
@@ -43,7 +43,10 @@ test('连续两个以上中转组提示可能是选路段；单个中转不提�
 
 test('流动档位按实时 bit/s 划分（主控为 byte/s），流动速度按延迟换算', () => {
   assert.deepEqual([0, 5_000, 20_000, 1_000_000, 5_000_000].map(flowLevel), [0, 0, 1, 2, 3])
-  assert.deepEqual([1, 14, 120, 500, 0, undefined].map(flowDuration), [0.8, 1, 2.8, 3.2, 2.4, 2.4])
+  assert.deepEqual([1, 14, 120, 500, 0, undefined].map(flowDuration), [1, 1, 2.4, 3.2, 2.4, 2.4])
+  // 同一档内延迟小幅波动不改变动画时长，避免光点跳动
+  assert.equal(flowDuration(15), flowDuration(16))
+  assert.equal(flowDuration(31), flowDuration(79))
 })
 
 const server = (name, healthy, to_next_ms = 5) => ({ name, healthy, to_next_ms })
@@ -112,4 +115,49 @@ test('某一天的流量明细：当天合计、按用量排序、不列 0 流�
   assert.deepEqual(day.servers.map(s => `${s.name} ${s.gb}`), ['out-b 4.5', 'in-a 0.5'])
   assert.equal(chainTrafficDay(chain('t', { traffic }), 2), null)
   assert.equal(chainTrafficDay(chain('none'), 0), null)
+})
+
+test('转发链流量的更新提示使用主控 15 分钟结算周期', () => {
+  assert.equal(FORWARD_TRAFFIC_SETTLE_MINUTES, 15)
+  assert.equal(FORWARD_TRAFFIC_NOTE, '主控每 15 分钟更新一次')
+})
+
+test('24 小时状态条：o 正常、d 中断、n 无数据，其余按降级；最后一格是当前', () => {
+  const now = Date.UTC(2026, 9, 8, 12, 0)
+  const cells = availabilityCells({ cells: 'nodx' }, now)
+  assert.deepEqual(cells.map((cell) => cell.tone), ['idle', 'ok', 'down', 'warn'])
+  assert.match(cells[3].label, /降级$/)
+  assert.match(cells[0].label, /无数据$/)
+  // 4 格铺满 24 小时，每格 6 小时
+  assert.equal(availabilityCells({ cells: 'o'.repeat(72) }, now).length, 72)
+})
+
+test('主控未下发新字段时，状态条、可用率、网速、抖动都返回空', () => {
+  const chain = { name: 'x', end_to_end_ms: 1, loss_pct: 0, groups: [], bucket_sec: 300, trend: [] }
+  assert.equal(availabilityCells(chain), null)
+  assert.equal(availabilityCells({ ...chain, cells: '' }), null)
+  assert.equal(availabilityPct(chain), null)
+  assert.equal(chainLiveSpeed(chain), null)
+  assert.equal(formatJitter(undefined), null)
+})
+
+test('可用率按 0–1 换算成百分比，接近满格不四舍五入成 100%', () => {
+  assert.equal(availabilityPct({ availability_24h: 1 }), 100)
+  assert.equal(availabilityPct({ availability_24h: 0.5 }), 50)
+  assert.equal(formatAvailability(100), '100%')
+  assert.equal(formatAvailability(99.996), '99.99%')
+  assert.equal(formatAvailability(99.5), '99.50%')
+  assert.equal(formatAvailability(87.66), '87.6%')
+})
+
+test('抖动 10 ms 以下保留一位小数', () => {
+  assert.equal(formatJitter(0), '0.0 ms')
+  assert.equal(formatJitter(2.5), '2.5 ms')
+  assert.equal(formatJitter(12.4), '12 ms')
+})
+
+test('链级实时网速：负数和缺失按 0 处理并给出合计', () => {
+  assert.deepEqual(chainLiveSpeed({ speed_up: 632, speed_down: 3397 }), { up: 632, down: 3397, total: 4029 })
+  assert.deepEqual(chainLiveSpeed({ speed_up: 100 }), { up: 100, down: 0, total: 100 })
+  assert.deepEqual(chainLiveSpeed({ speed_up: -5, speed_down: 0 }), { up: 0, down: 0, total: 0 })
 })
