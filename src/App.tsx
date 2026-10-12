@@ -20,7 +20,7 @@ import { StaleDataBanner } from './StaleDataBanner'
 import { ForwardOverview, prefetchDeferred, ServerDetail, SystemTrendChart, TrafficDialog, TrendDialog } from './deferred'
 import { Meter, systemTitle, SystemIcon, routeCarrierLabels, goldRoutes, displayReturnRoute, ReturnRouteBadges } from './components/ServerVisuals'
 import { LUMINA_QUOTA_SEGMENTS } from './components/LuminaHealthBars'
-import { ProbeLicenseFooter } from './components/ProbeLicenseFooter'
+import { ProbeLicenseBar } from './components/ProbeLicenseBar'
 
 const RegionGlobe = lazy(() => import('./RegionGlobe').then((module) => ({ default: module.RegionGlobe })))
 const PremiumProbePage = lazy(() => import('./PremiumProbePage').then((module) => ({ default: module.PremiumProbePage })))
@@ -468,12 +468,12 @@ function Leaderboard({ servers }: { servers: ProbeServer[] }) {
     </section>
   )
 }
-function SystemTrendDialog({ serverIndex, title, metric, close }: { serverIndex: number; title: string; metric: 'cpu' | 'mem'; close: () => void }) {
+function SystemTrendDialog({ serverIndex, title, metric, close }: { serverIndex: number; title: string; metric: 'cpu' | 'mem' | 'disk'; close: () => void }) {
   return createPortal(
     <div className="modal-backdrop" role="presentation" onMouseDown={close}>
       <section className="modal" onMouseDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
         <header>
-          <h2>{title} · {metric === 'cpu' ? 'CPU' : '内存'}趋势</h2>
+          <h2>{title} · {metric === 'cpu' ? 'CPU' : metric === 'mem' ? '内存' : '磁盘'}趋势</h2>
           <button aria-label="关闭" onClick={close}>
             ×
           </button>
@@ -629,6 +629,7 @@ function ServerCardLumina({ server, index }: { server: EnrichedServer; index: nu
   const [trafficOpen, setTrafficOpen] = useState(false)
   const [cpuOpen, setCpuOpen] = useState(false)
   const [memOpen, setMemOpen] = useState(false)
+  const [diskOpen, setDiskOpen] = useState(false)
   const name = server.name || `服务器 ${index + 1}`
   const flag = regionFlag(server.region)
   const isOffline = !server.online
@@ -715,7 +716,19 @@ function ServerCardLumina({ server, index }: { server: EnrichedServer; index: nu
             </button>
           )}
           {server.disk_total !== undefined && (
-            <LuminaMetricBar icon={<HardDrive size={13} />} label="磁盘" value={`${pct(server.disk_used, server.disk_total).toFixed(1)}%`} detail={`${bytes(server.disk_used)} / ${bytes(server.disk_total)}`} paint="var(--progress-disk)" fraction={pct(server.disk_used, server.disk_total) / 100} />
+            <button
+              type="button"
+              className="lumina-metric-btn"
+              aria-label="查看磁盘趋势"
+              title="点击查看磁盘趋势"
+              onMouseDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation()
+                setDiskOpen(true)
+              }}
+            >
+              <LuminaMetricBar icon={<HardDrive size={13} />} label="磁盘" value={`${pct(server.disk_used, server.disk_total).toFixed(1)}%`} detail={`${bytes(server.disk_used)} / ${bytes(server.disk_total)}`} paint="var(--progress-disk)" fraction={pct(server.disk_used, server.disk_total) / 100} />
+            </button>
           )}
           {load1 !== undefined && (
             <LuminaMetricBar icon={<Gauge size={13} />} label="负载" value={load1.toFixed(2)} detail={`${loadParts[1]?.toFixed(2) ?? '—'} / ${loadParts[2]?.toFixed(2) ?? '—'}`} paint="var(--progress-load)" fraction={loadFraction} />
@@ -840,6 +853,7 @@ function ServerCardLumina({ server, index }: { server: EnrichedServer; index: nu
       {trafficOpen && <TrafficDialog server={server} close={() => setTrafficOpen(false)} />}
       {cpuOpen && <SystemTrendDialog serverIndex={index} title={name} metric="cpu" close={() => setCpuOpen(false)} />}
       {memOpen && <SystemTrendDialog serverIndex={index} title={name} metric="mem" close={() => setMemOpen(false)} />}
+      {diskOpen && <SystemTrendDialog serverIndex={index} title={name} metric="disk" close={() => setDiskOpen(false)} />}
     </>
   )
 }
@@ -1489,7 +1503,7 @@ function ProbeApp({ data, error }: ReturnType<typeof useProbe>) {
   const totalUpload = servers.reduce((sum, server) => sum + (server.upload_speed || 0), 0)
   const totalDownload = servers.reduce((sum, server) => sum + (server.download_speed || 0), 0)
   return (
-    <div className={data.license_badge ? 'app-shell has-license-footer' : 'app-shell'}>
+    <div className='app-shell'>
       <header className="topbar">
         <div>
           {data.logo && <img src={data.logo} alt="" />}
@@ -1682,7 +1696,8 @@ function ProbeApp({ data, error }: ReturnType<typeof useProbe>) {
           MMWX Group
         </a>
       </footer>
-      <ProbeLicenseFooter badges={data.license_badge} />
+      {/* 许可证放在页面末尾并带动画开关（与 LuminaPlus、Premium 一致）；开关按主题分别记忆 */}
+      <ProbeLicenseBar badges={data.license_badge} storageKey={`jiwo-${activeTheme}-license-anim`} className="probe-license-bar" toggleClassName="probe-license-toggle" />
       {detailIndex !== null && servers[detailIndex] && (
         <ServerDetail
           server={servers[detailIndex]}

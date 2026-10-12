@@ -347,7 +347,7 @@ function DetailMetric({ icon, label, value, percent, sub, retro = false }: { ico
 export function ServerDetail({ server, index, onClose, showHealthScore = false, variant }: { server: ProbeServer; index: number; onClose: () => void; showHealthScore?: boolean; variant?: 'winxp' | 'win2000' | 'macos9' }) {
   const networkSpeed = useNetworkSpeed()
   const [selected, setSelected] = useState('__avg__')
-  const [trendMode, setTrendMode] = useState<'latency' | 'loss' | 'traffic' | 'cpu' | 'mem' | 'connections'>(server.ping?.length ? 'latency' : 'connections')
+  const [trendMode, setTrendMode] = useState<'latency' | 'loss' | 'traffic' | 'cpu' | 'mem' | 'disk' | 'connections'>(server.ping?.length ? 'latency' : 'connections')
   const name = server.name || `服务器 ${index + 1}`
   const flag = regionFlag(server.region)
   const ping = server.ping || []
@@ -551,7 +551,7 @@ export function ServerDetail({ server, index, onClose, showHealthScore = false, 
           {retro ? <Suspense fallback={<div role="status">正在加载趋势图…</div>}><RetroHistoryCharts key={index} server={server} index={index} /></Suspense> : (
             <section className="detail-panel" aria-label="历史趋势">
               <div className="detail-panel-head">
-                <h3>{trendMode === 'latency' ? '延迟趋势' : trendMode === 'loss' ? '丢包趋势' : trendMode === 'traffic' ? '日流量趋势' : trendMode === 'cpu' ? 'CPU 趋势' : trendMode === 'mem' ? '内存趋势' : 'TCP / UDP 连接数趋势'}</h3>
+                <h3>{trendMode === 'latency' ? '延迟趋势' : trendMode === 'loss' ? '丢包趋势' : trendMode === 'traffic' ? '日流量趋势' : trendMode === 'cpu' ? 'CPU 趋势' : trendMode === 'mem' ? '内存趋势' : trendMode === 'disk' ? '硬盘趋势' : 'TCP / UDP 连接数趋势'}</h3>
                 <div className="trend-mode-switch" role="tablist" aria-label="趋势类型">
                   <button type="button" role="tab" aria-selected={trendMode === 'latency'} className={trendMode === 'latency' ? 'active' : ''} onClick={() => setTrendMode('latency')}>
                     延迟
@@ -568,6 +568,9 @@ export function ServerDetail({ server, index, onClose, showHealthScore = false, 
                   <button type="button" role="tab" aria-selected={trendMode === 'mem'} className={trendMode === 'mem' ? 'active' : ''} onClick={() => setTrendMode('mem')}>
                     内存
                   </button>
+                  <button type="button" role="tab" aria-selected={trendMode === 'disk'} className={trendMode === 'disk' ? 'active' : ''} onClick={() => setTrendMode('disk')}>
+                    硬盘
+                  </button>
                   <button type="button" role="tab" aria-selected={trendMode === 'connections'} className={trendMode === 'connections' ? 'active' : ''} onClick={() => setTrendMode('connections')}>
                     TCP/UDP
                   </button>
@@ -575,7 +578,7 @@ export function ServerDetail({ server, index, onClose, showHealthScore = false, 
               </div>
               {trendMode === 'traffic' ? (
                 <TrafficChart daily={server.daily_traffic || []} containerClass="detail-chart detail-chart-traffic" />
-              ) : trendMode === 'cpu' || trendMode === 'mem' || trendMode === 'connections' ? (
+              ) : trendMode === 'cpu' || trendMode === 'mem' || trendMode === 'disk' || trendMode === 'connections' ? (
                 <SystemTrendChart serverIndex={index} metric={trendMode} containerClass="detail-chart detail-chart-system" />
               ) : (
                 <>

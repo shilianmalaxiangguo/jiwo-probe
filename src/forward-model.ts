@@ -73,20 +73,41 @@ export function forwardSummary(chains: ForwardChainData[]) {
 export const FORWARD_TRAFFIC_SETTLE_MINUTES = 15
 export const FORWARD_TRAFFIC_NOTE = `主控每 ${FORWARD_TRAFFIC_SETTLE_MINUTES} 分钟更新一次`
 
-/** 7 天流量：每天各节点合计与流量最多的节点；无数据返回 null。 */
-export function chainTraffic(chain: ForwardChainData, top = 3) {
+const TRAFFIC_ROLES = [
+  { role: 'entry', label: '入口' },
+  { role: 'mid', label: '中转' },
+  { role: 'exit', label: '出口' },
+]
+
+export type TrafficRoleGroup<T> = { role: string; label: string; gb: number; servers: T[] }
+
+/**
+ * 按角色分组：入口 → 中转 → 出口（没有中转就只有两组），组内按流量从大到小；主控若下发其他角色归入最后的「其他」。
+ * 不按流量混排、不截断，中转节点流量小也会列出。
+ */
+export function groupTrafficByRole<T extends { role: string; gb: number }>(servers: T[]): TrafficRoleGroup<T>[] {
+  const known = new Set(TRAFFIC_ROLES.map((item) => item.role))
+  return [...TRAFFIC_ROLES, { role: '', label: '其他' }]
+    .map(({ role, label }) => {
+      const members = servers.filter((server) => (role ? server.role === role : !known.has(server.role))).sort((a, b) => b.gb - a.gb)
+      return { role, label, gb: members.reduce((sum, server) => sum + server.gb, 0), servers: members }
+    })
+    .filter((group) => group.servers.length > 0)
+}
+
+/** 7 天流量：每天各节点合计，以及按角色分组的各节点 7 天用量（0 流量节点不列出）；无数据返回 null。 */
+export function chainTraffic(chain: ForwardChainData) {
   const traffic = chain.traffic
   if (!traffic?.days?.length || !traffic.servers?.length) return null
   const daily = traffic.days.map((date, i) => ({
     date,
     gb: traffic.servers.reduce((sum, server) => sum + (finite(server.daily_gb?.[i]) ? server.daily_gb[i] : 0), 0),
   }))
-  const servers = [...traffic.servers]
+  const groups = groupTrafficByRole(traffic.servers
     .filter((server) => finite(server.total_gb) && server.total_gb > 0)
-    .sort((a, b) => b.total_gb - a.total_gb)
-    .slice(0, top)
+    .map((server) => ({ name: server.name, group: server.group, role: server.role, gb: server.total_gb })))
   const total = finite(traffic.total_gb) ? traffic.total_gb : daily.reduce((sum, day) => sum + day.gb, 0)
-  return { daily, servers, total }
+  return { daily, groups, total }
 }
 
 export function formatGb(gb: number): string {
@@ -97,15 +118,14 @@ export function formatGb(gb: number): string {
   return `${Math.max(1, Math.round(gb * 1024))} MB`
 }
 
-/** 某一天的流量明细：当天合计与各节点用量（从多到少，0 流量不列出）；越界或无数据返回 null。 */
+/** 某一天的流量明细：当天合计与各节点用量（按角色分组、组内从多到少，0 流量不列出）；越界或无数据返回 null。 */
 export function chainTrafficDay(chain: ForwardChainData, dayIndex: number) {
   const traffic = chain.traffic
   if (!traffic?.days?.length || !traffic.servers?.length || dayIndex < 0 || dayIndex >= traffic.days.length) return null
   const servers = traffic.servers
     .map((server) => ({ name: server.name, group: server.group, role: server.role, gb: finite(server.daily_gb?.[dayIndex]) ? server.daily_gb[dayIndex] : 0 }))
     .filter((server) => server.gb > 0)
-    .sort((a, b) => b.gb - a.gb)
-  return { date: traffic.days[dayIndex], total: servers.reduce((sum, server) => sum + server.gb, 0), servers }
+  return { date: traffic.days[dayIndex], total: servers.reduce((sum, server) => sum + server.gb, 0), groups: groupTrafficByRole(servers) }
 }
 
 export type CellTone = ForwardStatus | 'idle'
@@ -125,21 +145,22 @@ export function trendCells(chain: ForwardChainData): { ts: number; tone: CellTon
   })
 }
 
-const CELL_TONE: Record<string, CellTone> = { o: 'ok', d: 'down', n: 'idle' }
+// 编码与上游 4cf4ae7 的类型注释一致：o 正常、d 降级、b 中断、n 无数据；不认识的字符按无数据
+const CELL_TONE: Record<string, CellTone> = { o: 'ok', d: 'warn', b: 'down', n: 'idle' }
 const CELL_LABEL: Record<CellTone, string> = { ok: '正常', warn: '降级', down: '中断', idle: '无数据' }
 const DAY_MS = 24 * 3600 * 1000
 const clock = (ms: number) => new Date(ms).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })
 
 /**
  * 近 24 小时状态条（主控 v0.5.6-beta.6 起的 cells）：每个字符一格、按时间先后排列，最后一格是当前。
- * 已见到的编码只有 o 正常、d 中断、n 无数据，其余字符一律按降级显示。主控不下发时返回 null。
+ * 主控不下发时返回 null。
  */
 export function availabilityCells(chain: ForwardChainData, now = Date.now()): { key: number; tone: CellTone; label: string }[] | null {
   const cells = chain.cells
   if (typeof cells !== 'string' || !cells.length) return null
   const span = DAY_MS / cells.length
   return [...cells].map((char, index) => {
-    const tone = CELL_TONE[char] ?? 'warn'
+    const tone = CELL_TONE[char] ?? 'idle'
     const end = now - (cells.length - 1 - index) * span
     return { key: index, tone, label: `约 ${clock(end - span)}–${clock(end)} · ${CELL_LABEL[tone]}` }
   })
@@ -159,7 +180,7 @@ export function formatAvailability(pct: number): string {
   return `${(Math.floor(pct * 10) / 10).toFixed(1)}%`
 }
 
-export function formatJitter(ms: number | undefined): string | null {
+export function formatJitter(ms: number | null | undefined): string | null {
   if (!finite(ms) || ms < 0) return null
   return `${ms < 10 ? ms.toFixed(1) : Math.round(ms)} ms`
 }
