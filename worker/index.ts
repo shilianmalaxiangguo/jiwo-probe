@@ -180,14 +180,6 @@ function checkedOrigin(value: string, label: string): URL {
   return origin
 }
 
-function originURL(env: Env, pathname: string, search = ''): URL {
-  const origin = checkedOrigin(env.MMWX_ORIGIN, 'MMWX_ORIGIN')
-  origin.pathname = pathname
-  origin.search = search
-  return origin
-}
-
-// 数据面可走独立入口（例如 Cloudflare Tunnel），登录与 Passkey 仍留在 MMWX_ORIGIN。
 function probeOriginURL(env: Env, pathname: string, search = ''): URL {
   const origin = checkedOrigin(env.PROBE_ORIGIN || env.MMWX_ORIGIN, 'PROBE_ORIGIN')
   origin.pathname = pathname
@@ -213,7 +205,7 @@ function upstreamHeaders(request: Request, env: Env): Headers {
 async function proxyAuth(request: Request, incoming: URL, env: Env): Promise<Response> {
   if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 })
 
-  const target = originURL(env, incoming.pathname, incoming.search)
+  const target = probeOriginURL(env, incoming.pathname, incoming.search)
   const headers = new Headers(request.headers)
   headers.delete('cookie')
   headers.delete('authorization')
