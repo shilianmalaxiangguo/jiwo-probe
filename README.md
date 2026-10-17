@@ -380,6 +380,7 @@ ProbeHub 连接或快照异常时会自动回退到原来的主控直连，不�
    | 名称 | 类型 | 值 |
    | --- | --- | --- |
    | `MMWX_ORIGIN` | Text | 主控 HTTPS 地址，例如 `https://panel.example.com` |
+   | `PROBE_ORIGIN` | Text（可选） | 探针数据面的独立 HTTPS 入口（如 Cloudflare Tunnel）；不设置时使用 `MMWX_ORIGIN`，登录仍走 `MMWX_ORIGIN` |
    | `PROBE_TOKEN` | Secret | 主控"系统设置 → 探针"生成的访问密钥 |
    | `PROBE_POLL_INTERVAL_SECONDS` | Text（可选） | 实时快照间隔，默认 `3`；降载时可设为 `5` |
    | `PROBE_NETWORK_SPEED_UNIT` | Text（可选） | 全局网速单位，默认 `bits`，可改 `bytes`；Ran 和累计流量不受影响 |

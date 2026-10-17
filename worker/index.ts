@@ -7,6 +7,7 @@ import type { ProbePayload } from '../src/types'
 interface Env {
   ASSETS: Fetcher
   MMWX_ORIGIN: string
+  PROBE_ORIGIN?: string
   PROBE_TOKEN: string
   PROBE_HUB: DurableObjectNamespace
   PROBE_POLL_INTERVAL_SECONDS?: string
@@ -171,11 +172,24 @@ const authRoutes = new Set([
   '/api/login/passkey/finish',
 ])
 
-function originURL(env: Env, pathname: string, search = ''): URL {
-  const origin = new URL(env.MMWX_ORIGIN)
+function checkedOrigin(value: string, label: string): URL {
+  const origin = new URL(value)
   if (origin.protocol !== 'https:' && origin.hostname !== '127.0.0.1' && origin.hostname !== 'localhost') {
-    throw new Error('MMWX_ORIGIN must use HTTPS')
+    throw new Error(`${label} must use HTTPS`)
   }
+  return origin
+}
+
+function originURL(env: Env, pathname: string, search = ''): URL {
+  const origin = checkedOrigin(env.MMWX_ORIGIN, 'MMWX_ORIGIN')
+  origin.pathname = pathname
+  origin.search = search
+  return origin
+}
+
+// 数据面可走独立入口（例如 Cloudflare Tunnel），登录与 Passkey 仍留在 MMWX_ORIGIN。
+function probeOriginURL(env: Env, pathname: string, search = ''): URL {
+  const origin = checkedOrigin(env.PROBE_ORIGIN || env.MMWX_ORIGIN, 'PROBE_ORIGIN')
   origin.pathname = pathname
   origin.search = search
   return origin
@@ -184,7 +198,7 @@ function originURL(env: Env, pathname: string, search = ''): URL {
 function upstreamURL(request: Request, env: Env): URL | null {
   const incoming = new URL(request.url)
   const path = routes[incoming.pathname]
-  return path ? originURL(env, path, incoming.search) : null
+  return path ? probeOriginURL(env, path, incoming.search) : null
 }
 
 function upstreamHeaders(request: Request, env: Env): Headers {
@@ -336,7 +350,7 @@ async function shouldBlockOriginLogin(request: Request, env: Env): Promise<boole
     const response = await directUpstream(
       request,
       env,
-      originURL(env, '/api/public/probe-servers'),
+      probeOriginURL(env, '/api/public/probe-servers'),
     )
     if (!response.ok) return true
     const payload = await response.json() as { block_login?: boolean }
@@ -484,7 +498,7 @@ export class ProbeHub implements DurableObject {
   }
 
   private async fetchSnapshot(): Promise<string> {
-    const response = await fetch(originURL(this.env, '/api/public/probe-servers'), {
+    const response = await fetch(probeOriginURL(this.env, '/api/public/probe-servers'), {
       headers: { 'X-MMwx-Probe-Token': this.env.PROBE_TOKEN },
     })
     if (!response.ok) throw new Error(`upstream snapshot returned ${response.status}`)
