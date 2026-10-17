@@ -28,7 +28,7 @@ const HUB_IDLE_CLOSE_MS = 30_000
 const HUB_DEFAULT_POLL_MS = 3_000
 const HUB_MIN_POLL_MS = 3_000
 const HUB_MAX_POLL_MS = 60_000
-const HUB_NAME = 'global'
+const HUB_NAME = 'global-v2'
 const HUB_CLIENT_TAG = 'probe-client'
 // 声明支持增量帧的连接（/api/stream?delta=1）；未声明的旧页面始终收完整帧。
 const HUB_DELTA_TAG = 'probe-delta'
@@ -454,16 +454,27 @@ export class ProbeHub implements DurableObject {
     })
   }
 
+  private snapshotResponse(payload: string): Response {
+    return new Response(payload, {
+      headers: {
+        'Cache-Control': 'private, no-store',
+        'Content-Type': 'application/json; charset=utf-8',
+        'X-Probe-Source': 'hub',
+      },
+    })
+  }
+
   private async snapshot(): Promise<Response> {
     try {
-      const payload = await this.ensureSnapshot()
-      return new Response(payload, {
-        headers: {
-          'Cache-Control': 'private, no-store',
-          'Content-Type': 'application/json; charset=utf-8',
-          'X-Probe-Source': 'hub',
-        },
-      })
+      if (this.latestPayload) {
+        if (Date.now() - this.latestAt > HUB_SNAPSHOT_MAX_AGE_MS) {
+          this.state.waitUntil(this.ensureSnapshot().catch((error) => {
+            console.warn('ProbeHub background refresh failed', error)
+          }))
+        }
+        return this.snapshotResponse(this.latestPayload)
+      }
+      return this.snapshotResponse(await this.ensureSnapshot())
     } catch (error) {
       console.error('ProbeHub snapshot failed', error)
       return new Response('ProbeHub snapshot unavailable', { status: 502 })
@@ -500,6 +511,7 @@ export class ProbeHub implements DurableObject {
   private async fetchSnapshot(): Promise<string> {
     const response = await fetch(probeOriginURL(this.env, '/api/public/probe-servers'), {
       headers: { 'X-MMwx-Probe-Token': this.env.PROBE_TOKEN },
+      signal: AbortSignal.timeout(8_000),
     })
     if (!response.ok) throw new Error(`upstream snapshot returned ${response.status}`)
     const upstreamPayload = await response.text()
@@ -781,15 +793,23 @@ export default {
     }
 
     if (incoming.pathname === '/api/stream') {
+      let timeoutId: NodeJS.Timeout | undefined
       try {
-        const hubResponse = await hubStub(env).fetch(new Request(`https://probe-hub.internal/stream${incoming.search}`, {
-          method: 'GET',
-          headers: request.headers,
-        }))
+        const hubResponse = await Promise.race([
+          hubStub(env).fetch(new Request(`https://probe-hub.internal/stream${incoming.search}`, {
+            method: 'GET',
+            headers: request.headers,
+          })),
+          new Promise<never>((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error('ProbeHub stream timeout')), 5_000)
+          }),
+        ])
         if (hubResponse.status === 101 && hubResponse.webSocket) return hubResponse
         console.warn(`ProbeHub stream returned ${hubResponse.status}; using direct upstream`)
       } catch (error) {
         console.error('ProbeHub stream unavailable; using direct upstream', error)
+      } finally {
+        clearTimeout(timeoutId)
       }
       return directUpstream(request, env, target)
     }
@@ -797,14 +817,22 @@ export default {
     let upstream: Response
     let source: 'hub' | 'origin-fallback' | 'origin' = 'origin'
     if (cacheKey) {
+      let timeoutId: NodeJS.Timeout | undefined
       try {
-        upstream = await hubStub(env).fetch('https://probe-hub.internal/snapshot')
+        upstream = await Promise.race([
+          hubStub(env).fetch(new Request('https://probe-hub.internal/snapshot')),
+          new Promise<never>((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error('ProbeHub snapshot timeout')), 5_000)
+          }),
+        ])
         if (!upstream.ok) throw new Error(`ProbeHub snapshot returned ${upstream.status}`)
         source = 'hub'
       } catch (error) {
         console.error('ProbeHub snapshot unavailable; using direct upstream', error)
         upstream = await directUpstream(request, env, target)
         source = 'origin-fallback'
+      } finally {
+        clearTimeout(timeoutId)
       }
     } else {
       upstream = await directUpstream(request, env, target)
