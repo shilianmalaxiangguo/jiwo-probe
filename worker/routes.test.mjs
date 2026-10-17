@@ -140,3 +140,20 @@ test('Passkey 鉴权转发不携带只读探针密钥和访客 Cookie', async ()
     assert.equal(calls[0].headers.get('Cookie'), null)
   })
 })
+
+test('PROBE_ORIGIN 只用于数据面，登录重定向仍回 MMWX_ORIGIN', async () => {
+  await withUpstream(() => Response.json({ block_login: false }), async calls => {
+    const customEnv = { ...env([]), PROBE_ORIGIN: 'https://probe-origin.test' }
+    const response = await worker.fetch(new Request('https://probe.test/api/forward', { headers: ownPage }), customEnv, { waitUntil() {} })
+    assert.equal(response.status, 200)
+    assert.equal(calls.length, 1)
+    assert.equal(new URL(calls[0].url).origin, 'https://probe-origin.test')
+    assert.equal(new URL(calls[0].url).pathname, '/api/public/probe-forward')
+
+    const login = await worker.fetch(new Request('https://probe.test/login'), customEnv, { waitUntil() {} })
+    assert.equal(login.status, 302)
+    assert.equal(login.headers.get('Location'), 'https://panel.test/login')
+    assert.equal(calls.length, 2)
+    assert.equal(new URL(calls[1].url).origin, 'https://probe-origin.test')
+  })
+})
