@@ -28,7 +28,7 @@ import {
 } from 'lucide-react'
 import type { ProbePayload, ProbeServer, ThemeName } from '../types'
 import { computeRemainingValue, formatMoney } from '../value'
-import { CYCLE_LABELS, isPermanent } from '../renewal'
+import { CYCLE_LABELS, isPermanent, renewalPriceCny } from '../renewal'
 import { flagToCountryCode } from '../country-flag'
 import { Twemoji } from '../Twemoji'
 import { PasskeyLogin } from '../PasskeyLogin'
@@ -82,8 +82,9 @@ function countryFlag(code?: string): string {
 
 function serverRegionKey(server: ProbeServer): string {
   return (
-    server.region_country ||
+    // 手动选的国旗（region）优先，按 IP 自动识别的 region_country 兜底（见 server-format probeRegion）
     flagToCountryCode(server.region ?? '') ||
+    server.region_country ||
     server.region?.trim() ||
     'UNKNOWN'
   ).toUpperCase()
@@ -332,8 +333,9 @@ function GmGeneralCards({ servers }: { servers: ProbeServer[] }) {
     let totalPrice = 0
     for (const server of servers) {
       const rv = computeRemainingValue(server)
-      if (rv) totalValue += rv.value
-      if (server.renewal_price !== undefined) totalPrice += server.renewal_price_cny ?? server.renewal_price
+      // 只汇总人民币口径，外币没有主控换算价时不计入
+      if (rv && rv.currency.toUpperCase() === 'CNY') totalValue += rv.value
+      totalPrice += renewalPriceCny(server) ?? 0
     }
     const mem = splitBytesText(memUsed)
     const disk = splitBytesText(diskUsed)

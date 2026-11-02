@@ -313,263 +313,24 @@ button {
     font-size: 10px;
   }
 }
-.dashboard-summary,
 .probe-toolbar {
   width: min(1600px, calc(100% - 48px));
   margin: 18px auto 0;
 }
-.dashboard-summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 16px;
-  align-items: start;
-}
-.summary-card,
+
 .probe-toolbar {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: var(--shadow);
 }
-.summary-card {
-  padding: 0;
-  overflow: hidden;
-}
-.summary-card > header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 30px;
-  margin-bottom: 15px;
-  color: var(--foreground);
-  font-size: 15px;
-  font-weight: 650;
-}
-.summary-toggle {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  min-height: 54px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 18px;
-  border: 0;
-  color: var(--foreground, #172033);
-  background: transparent;
-  cursor: pointer;
-}
-.summary-toggle > span:first-child {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 15px;
-  font-weight: 650;
-}
-.summary-toggle > span:first-child svg {
-  color: var(--primary);
-}
-.summary-toggle .summary-toggle-info {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--muted);
-  font-size: 13px;
-  min-width: 0;
-  overflow: hidden;
-}
-.summary-toggle .summary-toggle-info b {
-  color: var(--foreground);
-  font-weight: 650;
-  font-size: 14px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-.summary-toggle .summary-toggle-info b.ok {
-  color: #16a34a;
-}
-.summary-toggle .summary-toggle-info b.bad {
-  color: #dc2626;
-}
-.summary-toggle .summary-toggle-info em {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-style: normal;
-  color: var(--muted);
-  font-size: 12px;
-  white-space: nowrap;
-}
-.summary-toggle svg:last-child {
-  flex: 0 0 auto;
-  transition: transform 0.2s ease;
-}
-.collapse-card {
-  display: flex;
-  flex-direction: column;
-}
-.collapse-card.open .summary-toggle svg:last-child {
-  transform: rotate(180deg);
-}
-.collapse-card .collapse-body {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  padding: 0 18px 16px;
-}
-.collapse-card .collapse-body > .node-stats {
-  flex: 1;
-  align-content: stretch;
-  min-height: 105px;
-}
-.collapse-card .collapse-body > .node-stats button {
-  height: 100%;
-}
-.collapse-card .collapse-body > .network-stats,
-.collapse-card .collapse-body > .assets-stats {
-  flex: 1;
-  align-content: stretch;
-  min-height: 105px;
-}
-.collapse-card .collapse-body > .assets-stats {
-  display: flex;
-  flex-direction: column;
-}
-.collapse-card .collapse-body > .assets-stats .assets-main {
-  flex: 1;
-  align-content: center;
-}
-.collapse-card .collapse-body > .network-stats .speed-summary {
-  justify-content: center;
-}
+
 .expiry-shortcut-row {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 8px;
 }
-.summary-card > header > span,
-.expiry-shortcut {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-.summary-card > header > span svg {
-  color: var(--primary);
-}
-.summary-card > header small {
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 400;
-}
-.expiry-shortcut {
-  border: 0;
-  color: var(--muted);
-  background: none;
-  cursor: pointer;
-}
-.expiry-shortcut b {
-  min-width: 20px;
-  border-radius: 10px;
-  padding: 2px 6px;
-  color: #fff;
-  background: #f97316;
-}
-.node-stats,
-.network-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-.node-stats button,
-.speed-summary {
-  min-height: 105px;
-  border: 0;
-  border-radius: var(--radius);
-  background: color-mix(in srgb, var(--page-bg) 72%, var(--surface));
-}
-.node-stats button {
-  display: grid;
-  place-content: center;
-  gap: 8px;
-  color: var(--foreground);
-  cursor: pointer;
-}
-.node-stats strong {
-  font-size: 27px;
-}
-.node-stats span {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--muted);
-  font-size: 12px;
-}
-.node-stats .online strong {
-  color: #57ab5a;
-}
-.node-stats .offline strong {
-  color: #ef4444;
-}
-.network-stats {
-  grid-template-columns: 1fr 1fr;
-}
-.speed-summary {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 18px;
-}
-.speed-summary > div:first-child {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.speed-summary span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--muted);
-  font-size: 12px;
-}
-.speed-summary strong {
-  font-size: 19px;
-  font-variant-numeric: tabular-nums;
-}
-.speed-summary.down svg {
-  color: #10b981;
-}
-.speed-summary.up svg {
-  color: #f97316;
-}
-.speed-progress {
-  position: relative;
-  height: 8px;
-  margin-top: 17px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--border) 65%, transparent);
-  overflow: visible;
-}
-.speed-progress i {
-  display: block;
-  height: 100%;
-  min-width: 2px;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--primary), #22c55e);
-  transition: width 0.45s ease;
-}
-.speed-summary.up .speed-progress i {
-  background: linear-gradient(90deg, #f97316, #fb7185);
-}
-.speed-progress small {
-  position: absolute;
-  right: 0;
-  top: 11px;
-  color: var(--muted);
-  font-size: 9px;
-}
+
 .probe-toolbar {
   padding: 12px;
 }
@@ -608,6 +369,758 @@ button {
   background: #dc2626;
   border-color: #dc2626;
 }
+/* ===== 顶部汇总（照主控 v0.6.1-beta.3 探针页）：一张卡里排指标格，右侧一张地区小卡 ===== */
+.overview {
+  width: min(1600px, calc(100% - 48px));
+  margin: 18px auto 0;
+  display: grid;
+  gap: 12px;
+}
+@media (min-width: 1024px) {
+  .overview.with-globe {
+    grid-template-columns: minmax(0, 1fr) 260px;
+  }
+}
+.kpi-panel {
+  container: kpi-panel / inline-size;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+/* 格子之间的细线由每格右、下各 1px 阴影画出；网格向右下多出 1px，最外侧那条被卡片裁掉 */
+.kpi-grid {
+  display: grid;
+  flex: 1;
+  /* 列数由 App 按宽度算（kpiColumns），写在行内样式里 */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* 右侧地区卡更高时，各行平分多出来的高度，不在卡片底部留空 */
+  grid-auto-rows: 1fr;
+  grid-auto-flow: row dense;
+  margin: 0 -1px -1px 0;
+}
+.kpi-cell {
+  container: kpi-cell / inline-size;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 10px 14px;
+  color: var(--foreground);
+  background: transparent;
+  box-shadow: 1px 1px 0 0 var(--border);
+  font: inherit;
+  text-align: left;
+}
+button.kpi-cell {
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+button.kpi-cell:hover {
+  background: color-mix(in srgb, var(--muted) 8%, transparent);
+}
+.kpi-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2px;
+  min-width: 0;
+  min-height: 68px;
+}
+.kpi-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+.kpi-label svg {
+  flex-shrink: 0;
+}
+.kpi-label > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kpi-value {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-value em {
+  font-style: normal;
+}
+.kpi-unit {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 400;
+}
+.kpi-speed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  font-size: 17px;
+}
+.kpi-pair {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 12px;
+}
+.kpi-sub {
+  display: block;
+  min-width: 0;
+  min-height: 16px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-sub b {
+  font-weight: 600;
+}
+.kpi-cell .online,
+.kpi-cell .down {
+  color: #16a34a;
+}
+.kpi-cell .offline {
+  color: #ef4444;
+}
+.kpi-cell .up {
+  color: #ea580c;
+}
+.kpi-cell .warn {
+  color: #d97706;
+}
+/* 右栏小图：文字栏只占所需宽度，剩下的宽度都给小图（至少 96px），宽格子里图跟着变宽、小字也不截断 */
+.kpi-cell.has-aside > .kpi-main {
+  flex: 0 1 auto;
+}
+.kpi-aside {
+  position: relative;
+  flex: 1 0 96px;
+  min-width: 96px;
+  min-height: 68px;
+}
+.kpi-aside .kpi-spark {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100% !important;
+}
+.kpi-aside .kpi-spark-area {
+  opacity: 0.08;
+}
+@container kpi-cell (min-width: 240px) {
+  .kpi-cell.has-aside .kpi-nearest {
+    display: none;
+  }
+}
+@container kpi-cell (max-width: 239px) {
+  .kpi-aside {
+    display: none;
+  }
+  .kpi-cell.has-aside > .kpi-main {
+    flex: 1;
+  }
+}
+/* 一行到底：放不下时由 FitText 缩字号，不折行、不截断；最小字号还放不下时藏掉说明字 */
+.fit-text {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.fit-text[data-overflow] > .fit-drop {
+  display: none;
+}
+.fit-text.kpi-speed .up {
+  margin-left: 4px;
+}
+/* 实时网速：文字优先，小图至少留 64px */
+.kpi-cell.speed-cell .kpi-aside {
+  flex-basis: 64px;
+  min-width: 64px;
+}
+/* 手机上两列格只有一百多像素，网速两个数放不下：独占一行，其它格子补位，落单的末格补满 */
+.kpi-grid.two-col {
+  grid-auto-flow: row dense;
+}
+.kpi-grid.two-col > .speed-cell,
+.kpi-grid.two-col:has(> .speed-cell) > :last-child:nth-child(even),
+.kpi-grid.two-col:not(:has(> .speed-cell)) > :last-child:nth-child(odd):not(:first-child) {
+  grid-column: span 2;
+}
+.kpi-spark {
+  display: block;
+  overflow: visible;
+}
+.kpi-spark-area {
+  stroke: none;
+  opacity: 0.16;
+}
+.kpi-spark-line {
+  fill: none;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.kpi-spark .down .kpi-spark-area {
+  fill: #22c55e;
+}
+.kpi-spark .down .kpi-spark-line {
+  stroke: #16a34a;
+}
+.kpi-spark .up .kpi-spark-area {
+  fill: #f97316;
+}
+.kpi-spark .up .kpi-spark-line {
+  stroke: #ea580c;
+}
+.kpi-spark .tcp .kpi-spark-area {
+  fill: #3b82f6;
+}
+.kpi-spark .tcp .kpi-spark-line {
+  stroke: #3b82f6;
+}
+.kpi-spark .udp .kpi-spark-area {
+  fill: #a855f7;
+}
+.kpi-spark .udp .kpi-spark-line {
+  stroke: #a855f7;
+}
+.kpi-columns {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 34px;
+}
+.kpi-columns i {
+  flex: 1;
+  min-height: 2px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--primary) 30%, transparent);
+}
+.kpi-columns i.today {
+  background: var(--primary);
+}
+/* 续费格右栏：最近到期的三台，名称省略、天数对齐 */
+.kpi-expiry-list {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 2px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-expiry-list > span {
+  display: flex;
+  gap: 8px;
+}
+.kpi-expiry-list > span > span:first-child {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kpi-expiry-list .soon {
+  color: #d97706;
+}
+.kpi-expiry-list .gone {
+  color: #dc2626;
+}
+/* 额度与网络质量一格：额度细条、已用 / 总量、优中差分段条、丢包 */
+.kpi-quota-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
+}
+/* 格子窄（手机两列）时额度、网络质量两段折成两行，不溢出到隔壁格 */
+.kpi-sub:has(.kpi-quota-line) {
+  overflow: visible;
+  white-space: normal;
+}
+.kpi-quota-line > span {
+  flex-shrink: 0;
+}
+.kpi-quota-line > .kpi-mini-bar {
+  flex: 1 1 40px;
+  min-width: 40px;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--border) 70%, transparent);
+}
+.kpi-mini-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
+}
+.kpi-mini-bar i.warn {
+  background: #eab308;
+}
+.kpi-mini-bar i.bad {
+  background: #ef4444;
+}
+.kpi-quality-bar {
+  display: flex;
+  width: 48px;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--border) 70%, transparent);
+}
+.kpi-quality-bar i {
+  height: 100%;
+}
+.kpi-quality-bar i.ok {
+  background: #22c55e;
+}
+.kpi-quality-bar i.warn {
+  background: #eab308;
+}
+.kpi-quality-bar i.bad {
+  background: #ef4444;
+}
+/* 地区小卡：只放地球本身，150px 居中（地区数已在「服务器」格里） */
+.globe-card.globe-mini {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 8px;
+}
+.globe-mini-stage {
+  flex: none;
+  width: 150px;
+  height: 150px;
+}
+.globe-mini-stage .globe-stage {
+  padding: 0;
+}
+.globe-mini-stage .region-globe {
+  width: 150px;
+  height: 150px;
+}
+.globe-mini-stage .globe-loading {
+  min-height: 150px;
+  font-size: 11px;
+}
+.filters {
+  flex-wrap: wrap;
+}
+.filters button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.filters .server-search {
+  flex: 1 1 200px;
+  min-width: 160px;
+  margin-left: 0;
+}
+.filters .server-search input {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+}
+.toolbar-end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.toolbar-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px 4px 4px 9px;
+  color: var(--muted);
+  background: var(--surface);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.toolbar-select select {
+  border: 0;
+  outline: 0;
+  padding: 2px 2px;
+  color: var(--foreground);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+.toolbar-select select option {
+  color: #172033;
+  background: #fff;
+}
+.toolbar-select:focus-within {
+  border-color: var(--accent, #8b5cf6);
+}
+.density-toggle {
+  display: inline-flex;
+}
+.density-toggle button:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.density-toggle button + button {
+  margin-left: -1px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+/* 状态筛选、卡片密度：分段按钮组（照主控 v0.6.1-beta.3 探针页），搜索框和下拉统一 34px 高 */
+.filters .filter-seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  border-radius: var(--radius);
+  padding: 2px;
+  background: color-mix(in srgb, var(--muted) 13%, transparent);
+}
+.filters .filter-seg button,
+.filters .filter-seg button + button {
+  height: 30px;
+  margin: 0;
+  border: 0;
+  border-radius: max(2px, calc(var(--radius) - 3px));
+  padding: 0 10px;
+  color: var(--muted);
+  background: transparent;
+  box-shadow: none;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.filters .filter-seg button:hover {
+  color: var(--foreground);
+}
+.filters .filter-seg button.active {
+  color: var(--foreground);
+  background: var(--surface);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1);
+}
+.filter-count {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.filter-count.bad {
+  color: #dc2626;
+}
+.filter-count.warn {
+  color: #d97706;
+}
+/* 选中项的数字跟着按钮文字色走：玻璃、Lumina 黑金 / 白金会把选中项填成彩色底 */
+.filters .filter-seg button.active .filter-count:not(.bad):not(.warn) {
+  color: inherit;
+  opacity: 0.7;
+}
+.filters .server-search {
+  height: 34px;
+  padding: 0 10px;
+}
+.toolbar-select,
+.filters .region-trigger {
+  height: 34px;
+  padding-block: 0;
+  font-size: 13px;
+}
+@media (min-width: 641px) {
+  .filters .server-search {
+    max-width: 320px;
+  }
+}
+/* ===== 经典服务器卡片（照主控 v0.6.1-beta.3 探针页）：四项占用两列、三个小格、每组延迟一行 ===== */
+/* 主控卡片标题行不带「详情 ›」，名字多留位置；整张卡片仍可点开详情 */
+.probe-card .detail-hint {
+  display: none;
+}
+.probe-card .metrics {
+  gap: 8px 20px;
+  margin: 0 16px;
+  padding: 8px 0 10px;
+}
+.probe-card .metric-head span {
+  flex-shrink: 1;
+  min-width: 0;
+}
+.probe-card .metric-head svg {
+  flex-shrink: 0;
+}
+.probe-card .metric-head strong {
+  flex-shrink: 0;
+  color: color-mix(in srgb, var(--foreground) 80%, transparent);
+  font-weight: 400;
+}
+.metric-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.probe-card .meter {
+  height: 6px;
+  margin-top: 3px;
+}
+.net-boxes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 16px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+.net-box {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--muted) 9%, transparent);
+  box-shadow: none;
+  font: inherit;
+  font-size: 12px;
+  line-height: 16px;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+.net-box > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.net-box b {
+  color: color-mix(in srgb, var(--foreground) 80%, transparent);
+  font-weight: 400;
+}
+.net-box .net-box-label {
+  color: var(--muted);
+  font-size: 11px;
+}
+.net-box .download {
+  color: #16a34a;
+}
+.net-box .upload {
+  color: #ea580c;
+}
+button.net-box {
+  cursor: pointer;
+}
+button.net-box:hover {
+  background: color-mix(in srgb, var(--muted) 16%, transparent);
+}
+.probe-card.dense .net-boxes {
+  gap: 6px;
+}
+.probe-card.dense .net-box {
+  padding: 5px 7px;
+}
+.probe-card .return-route-badges {
+  gap: 6px;
+  margin: 0 16px;
+  padding: 8px 0;
+}
+.probe-card .server-meta {
+  margin: 0 16px;
+  padding: 6px 0 9px;
+}
+/* 动漫卡片自带蕾丝内边距，各区块不再缩进 */
+.theme-anime .probe-card .metrics,
+.theme-anime .probe-card .net-boxes,
+.theme-anime .probe-card .card-ping-probe {
+  margin-inline: 0;
+}
+.theme-anime .probe-card .net-boxes,
+.theme-anime .probe-card .card-ping-probe {
+  border-color: #eadffc;
+}
+/* 动漫的蕾丝边框留给大卡片，地区小卡太小放不下 */
+:root.theme-anime .globe-card.globe-mini {
+  padding: 8px;
+}
+:root.theme-anime .globe-card.globe-mini::after {
+  content: none;
+}
+/* 宽屏吸顶；窄屏换行后太高，吸顶会遮住半屏 */
+@media (min-width: 1024px) {
+  .probe-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
+}
+/* 卡片视图：按地区分组时每组一个网格，不分组时只有一组。
+   用 auto-fill：筛选后只剩一两台、或组里只有一两台时不该被拉满整行，列宽与满屏时一致 */
+.servers.grouped {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.server-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+  gap: 16px;
+}
+.server-grid.dense {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+}
+.server-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.group-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 600;
+}
+.group-heading small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.group-heading::after {
+  content: '';
+  flex: 1;
+  border-top: 1px dashed var(--border);
+}
+/* ===== 卡片健康标记、离线卡片与紧凑模式 ===== */
+.server-title-gap {
+  flex: 1;
+}
+.health-badge {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid;
+  border-radius: 999px;
+  padding: 0 6px;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 16px;
+  white-space: nowrap;
+}
+.health-badge.ok {
+  border-color: rgba(34, 197, 94, 0.35);
+  color: #16a34a;
+  background: rgba(34, 197, 94, 0.1);
+}
+.health-badge.ok::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+.health-badge.bad {
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #dc2626;
+  background: rgba(239, 68, 68, 0.1);
+}
+/* 告警卡片：用 outline 而不是 border —— 各主题会改写卡片边框和阴影 */
+.server-card[data-alert='true'] {
+  outline: 1.5px solid rgba(239, 68, 68, 0.7);
+  outline-offset: -1px;
+}
+/* 连接数曲线与上下区块对齐，不贴卡片边缘 */
+.server-card > .probe-conn-history {
+  width: calc(100% - 32px);
+  margin-inline: 16px;
+}
+/* 动漫卡片自带内边距，曲线照常铺满 */
+.theme-anime .server-card > .probe-conn-history {
+  width: 100%;
+  margin-inline: 0;
+}
+/* 离线卡片内容少，不跟同排卡片拉到一样高 */
+.server-card.offline {
+  align-self: start;
+}
+.server-specs {
+  margin: 0 16px;
+  padding: 9px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.offline-note {
+  margin: 8px 16px 10px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: #dc2626;
+  background: rgba(239, 68, 68, 0.08);
+  font-size: 12px;
+}
+/* 进度条下的小字：CPU 核心数、内存 / 硬盘「已用 / 总量」、流量限额与重置日 */
+.metric-sub {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.metric-sub span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 紧凑模式名字更窄，不给「详情 ›」留位置 */
+.server-card.dense .detail-hint {
+  display: none;
+}
+/* 紧凑模式不显示连接数，网速独占一行 */
+.server-card.dense .speed.speed--connections {
+  grid-template-columns: minmax(0, 1fr);
+}
+.meter i.warn {
+  background: #eab308;
+}
+.meter i.bad {
+  background: #ef4444;
+}
 .server-card {
   position: relative;
   overflow: hidden;
@@ -619,12 +1132,12 @@ button {
 .server-title {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 15px 17px 14px;
+  gap: 8px;
+  padding: 12px 16px 11px;
   border-bottom: 1px solid var(--border);
 }
 .server-title h2 {
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -662,8 +1175,8 @@ button {
 .metrics {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 13px 20px;
-  padding: 14px 17px 13px;
+  gap: 9px 20px;
+  padding: 11px 16px 10px;
 }
 .metric-head {
   display: flex;
@@ -674,9 +1187,11 @@ button {
 }
 .metric-head span {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 5px;
   color: var(--muted);
+  white-space: nowrap;
 }
 .metric-head strong {
   font-weight: 500;
@@ -685,8 +1200,8 @@ button {
   white-space: nowrap;
 }
 .meter {
-  height: 6px;
-  margin-top: 6px;
+  height: 5px;
+  margin-top: 5px;
   overflow: hidden;
   border-radius: 99px;
   background: color-mix(in srgb, var(--border) 70%, transparent);
@@ -1531,13 +2046,11 @@ footer a:hover {
 :root.theme-pixel .modal {
   border-width: 2px;
 }
-:root.theme-pixel .summary-card,
+:root.theme-pixel .kpi-panel,
 :root.theme-pixel .probe-toolbar {
   border-width: 2px;
 }
-:root.theme-pixel .summary-card,
-:root.theme-pixel .node-stats button,
-:root.theme-pixel .speed-summary {
+:root.theme-pixel .kpi-panel {
   border-radius: 2px;
 }
 :root.theme-pixel button {
@@ -1569,32 +2082,7 @@ footer a:hover {
   border: 19px solid transparent;
   border-image: url('/anime-lace.svg') 30 round;
 }
-:root.theme-anime .summary-card {
-  position: relative;
-  overflow: hidden;
-  border: 0;
-  border-radius: 0;
-  padding: 28px 30px;
-  box-shadow: 0 4px 18px -6px rgba(139, 92, 246, 0.28);
-}
-:root.theme-anime .summary-card::after {
-  content: '';
-  pointer-events: none;
-  position: absolute;
-  inset: 4px;
-  border: 19px solid transparent;
-  border-image: url('/anime-lace.svg') 30 round;
-}
-:root.theme-anime .summary-card > * {
-  position: relative;
-  z-index: 1;
-}
-:root.theme-anime .node-stats button,
-:root.theme-anime .speed-summary {
-  border: 0;
-  border-radius: 0;
-  background: rgba(250, 247, 255, 0.78);
-}
+
 :root.theme-anime .probe-toolbar {
   border: 0;
   border-radius: 0;
@@ -1649,7 +2137,8 @@ footer a:hover {
   border-color: #e6dcfa;
 }
 :root.theme-anime .leaderboard-card,
-:root.theme-anime .globe-card {
+:root.theme-anime .globe-card,
+:root.theme-anime .kpi-panel {
   position: relative;
   border: 0;
   border-radius: 0;
@@ -1755,17 +2244,22 @@ footer a:hover {
   width: min(1600px, calc(100% - 48px));
   margin: 16px auto 0;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* 地球已挪到顶部汇总右侧，这一行宽屏并排两张多维榜单 */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   align-items: start;
 }
-/* 只有两卡都展开时才等高拉伸；只开一个时另一个保持折叠高度（不联动） */
-.globe-row:has(.globe-card.open):has(.leaderboard-card.open) {
+/* 两张榜单一起展开，展开后等高 */
+.globe-row:has(.leaderboard-card.open) {
   align-items: stretch;
 }
+/* 窄屏放不下两张，只留第一张 */
 @media (max-width: 960px) {
   .globe-row {
     grid-template-columns: 1fr;
+  }
+  .leaderboard-card.secondary {
+    display: none;
   }
 }
 .globe-card {
@@ -2000,23 +2494,59 @@ footer a:hover {
 .globe-card.open .globe-toggle svg:last-child {
   transform: rotate(180deg);
 }
+/* 地球海洋配色：深色页面用深色海洋，Lumina 黑金 / 白金跟随金色体系（玻璃、动漫另有定义） */
+:root.dark:not(.theme-glass) .globe-card {
+  --globe-ocean-light: #1e293b;
+  --globe-ocean-dark: #0b1220;
+}
+:root.theme-lumina.gold .globe-card {
+  --globe-ocean-light: #2b2922;
+  --globe-ocean-dark: #0b0b09;
+}
+:root.theme-lumina.platinum .globe-card {
+  --globe-ocean-light: #fbf6ea;
+  --globe-ocean-dark: #ecdfc2;
+}
 .globe-stage {
   position: relative;
   z-index: 1;
   display: grid;
   justify-items: center;
-  align-content: center;
   padding: 0 18px 16px;
 }
 .region-globe {
   width: min(100%, 680px);
-  max-height: 410px;
+  /* viewBox 上下各留了 40 给伸出地球的弧线,高度跟着放宽,地球本身大小不变 */
+  max-height: 496px;
+  --arc-from: #3b82f6;
+  --arc-to: #a855f7;
   touch-action: none;
   cursor: grab;
   user-select: none;
 }
 .region-globe:active {
   cursor: grabbing;
+}
+/* 亮点旁的旗帜 + 数量小标签 */
+.region-labels {
+  pointer-events: none;
+}
+.region-label {
+  fill: color-mix(in srgb, var(--surface) 86%, transparent);
+  stroke: color-mix(in srgb, var(--primary) 55%, transparent);
+  stroke-width: 0.8;
+  vector-effect: non-scaling-stroke;
+}
+.region-label-text {
+  fill: currentColor;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.region-label-leader {
+  stroke: color-mix(in srgb, var(--primary) 60%, transparent);
+  stroke-width: 0.8;
+  vector-effect: non-scaling-stroke;
 }
 .globe-glow {
   fill: color-mix(in srgb, var(--primary) 30%, transparent);
@@ -2059,21 +2589,33 @@ footer a:hover {
   place-items: center;
   color: var(--muted);
 }
-.laser-segments {
+.globe-arcs {
+  pointer-events: none;
+}
+.arc-glow,
+.arc-core {
   fill: none;
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
-  pointer-events: none;
 }
-.laser-segments.glow {
-  stroke: var(--primary);
-  stroke-width: 6;
-  opacity: 0.42;
+.arc-glow {
+  stroke-width: 5;
+  opacity: 0.55;
 }
-.laser-segments.core {
-  stroke: #fff;
-  stroke-width: 2.2;
-  opacity: 0.95;
+.arc-core {
+  stroke-width: 1.6;
+}
+.arc-from {
+  stop-color: var(--arc-from);
+}
+.arc-to {
+  stop-color: var(--arc-to);
+}
+.arc-packet {
+  fill: #fff;
+}
+.arc-packet-glow {
+  fill: color-mix(in srgb, var(--arc-from) 55%, transparent);
 }
 .region-point {
   fill: #fff;
@@ -2110,7 +2652,6 @@ footer a:hover {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .laser-segments,
   .region-point-halo {
     animation: none;
   }
@@ -2303,14 +2844,10 @@ footer a:hover {
   padding-bottom: 0;
   border-color: #eadffc;
 }
-@media (max-width: 960px) {
-  .dashboard-summary {
-    grid-template-columns: 1fr;
-  }
-}
+
 @media (max-width: 760px) {
   .servers,
-  .dashboard-summary,
+  .overview,
   .probe-toolbar,
   .globe-row,
   .app-shell > .probe-forward {
@@ -2319,45 +2856,22 @@ footer a:hover {
   .servers {
     padding-top: 14px;
   }
-  .dashboard-summary {
+  .overview {
     margin-top: 12px;
-    gap: 10px;
   }
-  .summary-card {
-    padding: 0;
+  .kpi-cell {
+    padding: 9px 12px;
   }
-  .collapse-card .collapse-body {
-    padding: 0 13px 12px;
+  .kpi-value {
+    font-size: 20px;
   }
-  .summary-toggle {
-    padding: 10px 13px;
+  .toolbar-end {
+    margin-left: 0;
   }
-  .summary-card > header {
-    margin-bottom: 10px;
+  .filters .server-search {
+    flex-basis: 100%;
   }
-  .node-stats {
-    gap: 7px;
-  }
-  .node-stats button {
-    min-height: 84px;
-  }
-  .node-stats strong {
-    font-size: 22px;
-  }
-  .node-stats span {
-    font-size: 10px;
-  }
-  .network-stats {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-  .speed-summary {
-    min-height: 88px;
-    padding: 14px;
-  }
-  .speed-summary strong {
-    font-size: 16px;
-  }
+
   .filters {
     width: 100%;
   }
@@ -2929,43 +3443,6 @@ footer a:hover {
   margin-top: 7px;
 }
 
-/* ===== 资产总揽 ===== */
-.assets-stats {
-  display: grid;
-  gap: 10px;
-}
-.assets-main {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 14px 16px;
-  border-radius: var(--radius);
-  background: color-mix(in srgb, var(--page-bg) 72%, var(--surface));
-}
-.assets-main span {
-  color: var(--muted);
-  font-size: 12px;
-}
-.assets-main strong {
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  color: var(--accent, #8b5cf6);
-}
-.assets-sub {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 18px;
-  padding: 0 4px;
-  color: var(--muted);
-  font-size: 12px;
-}
-.assets-sub b {
-  color: var(--foreground);
-  font-weight: 600;
-}
-
 /* ===== 玻璃主题（Glass）=====
    克制的环境光 + 可读性优先的磨砂层级。所有核心容器共用同一玻璃材质，
    通过透明度、边框与阴影区分主面板、内层信息和浮层。 */
@@ -3012,7 +3489,6 @@ footer a:hover {
   backdrop-filter: blur(24px) saturate(130%);
   -webkit-backdrop-filter: blur(24px) saturate(130%);
 }
-:root.theme-glass .summary-card,
 :root.theme-glass .probe-toolbar,
 :root.theme-glass .server-card,
 :root.theme-glass .server-mini-card,
@@ -3021,7 +3497,8 @@ footer a:hover {
 :root.theme-glass .server-table-wrap,
 :root.theme-glass .modal,
 :root.theme-glass .detail-cols > div,
-:root.theme-glass .detail-panel {
+:root.theme-glass .detail-panel,
+:root.theme-glass .kpi-panel {
   position: relative;
   border-color: var(--glass-border);
   background: var(--glass-surface);
@@ -3029,7 +3506,6 @@ footer a:hover {
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
 }
-:root.theme-glass .summary-card::before,
 :root.theme-glass .probe-toolbar::before,
 :root.theme-glass .server-card::before,
 :root.theme-glass .server-mini-card::before,
@@ -3039,7 +3515,8 @@ footer a:hover {
 :root.theme-glass .modal::before,
 :root.theme-glass .detail-cols > div::before,
 :root.theme-glass .detail-panel::before,
-:root.theme-glass .server-detail::before {
+:root.theme-glass .server-detail::before,
+:root.theme-glass .kpi-panel::before {
   content: '';
   position: absolute;
   z-index: 1;
@@ -3050,7 +3527,6 @@ footer a:hover {
   pointer-events: none;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), transparent);
 }
-:root.theme-glass .summary-card > *,
 :root.theme-glass .probe-toolbar > *,
 :root.theme-glass .server-card > *,
 :root.theme-glass .server-mini-card > *,
@@ -3058,7 +3534,8 @@ footer a:hover {
 :root.theme-glass .leaderboard-card > *,
 :root.theme-glass .modal > *,
 :root.theme-glass .detail-cols > div > *,
-:root.theme-glass .detail-panel > * {
+:root.theme-glass .detail-panel > *,
+:root.theme-glass .kpi-panel > * {
   position: relative;
   z-index: 2;
 }
@@ -3071,9 +3548,6 @@ footer a:hover {
 :root.theme-glass .server-detail-header {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.1));
 }
-:root.theme-glass .node-stats button,
-:root.theme-glass .speed-summary,
-:root.theme-glass .assets-main,
 :root.theme-glass .detail-value-main,
 :root.theme-glass .detail-speed > span,
 :root.theme-glass .detail-hw > span {
@@ -3081,28 +3555,16 @@ footer a:hover {
   background: var(--glass-surface-soft);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.62);
 }
-:root.theme-glass .node-stats button {
-  transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
-}
-:root.theme-glass .node-stats button:hover {
-  border-color: color-mix(in srgb, var(--primary) 38%, transparent);
-  background: rgba(255, 255, 255, 0.55);
-  transform: translateY(-1px);
-}
-:root.theme-glass .node-stats strong,
-:root.theme-glass .speed-summary strong,
-:root.theme-glass .assets-main strong,
+
 :root.theme-glass .metric-head strong,
 :root.theme-glass .ping-head strong {
   letter-spacing: -0.015em;
 }
-:root.theme-glass .meter,
-:root.theme-glass .speed-progress {
+:root.theme-glass .meter {
   background: rgba(91, 126, 139, 0.17);
   box-shadow: inset 0 1px 2px rgba(16, 42, 53, 0.08);
 }
-:root.theme-glass .meter i,
-:root.theme-glass .speed-progress i {
+:root.theme-glass .meter i {
   background: linear-gradient(90deg, #14b8a6, #159ac2);
 }
 :root.theme-glass .filters button,
@@ -3271,7 +3733,6 @@ footer a:hover {
   background: rgba(7, 22, 32, 0.74);
   box-shadow: 0 9px 30px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(224, 247, 252, 0.08);
 }
-:root.dark.theme-glass .summary-card::before,
 :root.dark.theme-glass .probe-toolbar::before,
 :root.dark.theme-glass .server-card::before,
 :root.dark.theme-glass .server-mini-card::before,
@@ -3281,25 +3742,21 @@ footer a:hover {
 :root.dark.theme-glass .modal::before,
 :root.dark.theme-glass .detail-cols > div::before,
 :root.dark.theme-glass .detail-panel::before,
-:root.dark.theme-glass .server-detail::before {
+:root.dark.theme-glass .server-detail::before,
+:root.dark.theme-glass .kpi-panel::before {
   background: linear-gradient(90deg, transparent, rgba(224, 247, 252, 0.28), transparent);
 }
 :root.dark.theme-glass .server-title,
 :root.dark.theme-glass .server-detail-header {
   background: linear-gradient(180deg, rgba(166, 226, 239, 0.07), rgba(5, 18, 28, 0.04));
 }
-:root.dark.theme-glass .node-stats button,
-:root.dark.theme-glass .speed-summary,
-:root.dark.theme-glass .assets-main,
 :root.dark.theme-glass .detail-value-main,
 :root.dark.theme-glass .detail-speed > span,
 :root.dark.theme-glass .detail-hw > span {
   border-color: rgba(175, 224, 237, 0.11);
   box-shadow: inset 0 1px 0 rgba(224, 247, 252, 0.06);
 }
-:root.dark.theme-glass .node-stats button:hover {
-  background: rgba(142, 210, 226, 0.09);
-}
+
 :root.dark.theme-glass .filters button,
 :root.dark.theme-glass .region-trigger,
 :root.dark.theme-glass .server-search,
@@ -3385,19 +3842,18 @@ footer a:hover {
   :root.dark.theme-glass .topbar {
     background: rgba(7, 22, 32, 0.86);
   }
-  :root.theme-glass .summary-card,
   :root.theme-glass .probe-toolbar,
-  :root.theme-glass .server-card,
-  :root.theme-glass .server-mini-card,
-  :root.theme-glass .globe-card,
-  :root.theme-glass .leaderboard-card,
-  :root.theme-glass .server-table-wrap,
-  :root.theme-glass .detail-panel {
+:root.theme-glass .server-card,
+:root.theme-glass .server-mini-card,
+:root.theme-glass .globe-card,
+:root.theme-glass .leaderboard-card,
+:root.theme-glass .server-table-wrap,
+:root.theme-glass .detail-panel,
+:root.theme-glass .kpi-panel {
     box-shadow: var(--glass-shadow), var(--glass-inset);
   }
   :root.theme-glass .server-card:hover,
-  :root.theme-glass .server-mini-card:hover,
-  :root.theme-glass .node-stats button:hover {
+:root.theme-glass .server-mini-card:hover {
     transform: none;
   }
   :root.theme-glass .server-detail-backdrop {
@@ -3683,15 +4139,15 @@ footer a:hover {
 }
 /* 黑金: 卡片顶部金色扫光(premium border-shine 移植, 10s 周期) */
 :root.theme-lumina.gold .lumina-card,
-:root.theme-lumina.gold .summary-card,
 :root.theme-lumina.gold .globe-card,
-:root.theme-lumina.gold .leaderboard-card {
+:root.theme-lumina.gold .leaderboard-card,
+:root.theme-lumina.gold .kpi-panel {
   position: relative;
 }
 :root.theme-lumina.gold .lumina-card::after,
-:root.theme-lumina.gold .summary-card::after,
 :root.theme-lumina.gold .globe-card::after,
-:root.theme-lumina.gold .leaderboard-card::after {
+:root.theme-lumina.gold .leaderboard-card::after,
+:root.theme-lumina.gold .kpi-panel::after {
   position: absolute;
   z-index: 5;
   top: 0;
@@ -3720,10 +4176,10 @@ footer a:hover {
 }
 /* 黑金: 卡片背景金色光晕 + 底部金色外发光(premium panel/server-card/filters 移植) */
 :root.theme-lumina.gold .lumina-card,
-:root.theme-lumina.gold .summary-card,
 :root.theme-lumina.gold .probe-toolbar,
 :root.theme-lumina.gold .globe-card,
-:root.theme-lumina.gold .leaderboard-card {
+:root.theme-lumina.gold .leaderboard-card,
+:root.theme-lumina.gold .kpi-panel {
   background:
     linear-gradient(140deg, rgba(216, 180, 106, 0.055), transparent 48%),
     var(--surface);
@@ -3736,10 +4192,10 @@ footer a:hover {
     color-mix(in srgb, var(--status-error) 5%, var(--surface));
 }
 :root.theme-lumina.gold .lumina-card:hover,
-:root.theme-lumina.gold .summary-card:hover,
 :root.theme-lumina.gold .probe-toolbar:hover,
 :root.theme-lumina.gold .globe-card:hover,
-:root.theme-lumina.gold .leaderboard-card:hover {
+:root.theme-lumina.gold .leaderboard-card:hover,
+:root.theme-lumina.gold .kpi-panel:hover {
   background:
     linear-gradient(140deg, rgba(216, 180, 106, 0.075), transparent 48%),
     color-mix(in srgb, var(--hover-bg) 38%, var(--surface));
@@ -3803,16 +4259,7 @@ footer a:hover {
 :root.theme-lumina.platinum .lumina-meter i {
   box-shadow: 0 0 9px -2px #a87c22;
 }
-/* 白金: 顶部网络状况 总下行/总上行 实时进度条 统一黑金渐变(替代默认绿/橙, 2026-08-15) */
-:root.theme-lumina.platinum .speed-summary .speed-progress {
-  height: 4px;
-  background: rgba(168, 124, 34, 0.1);
-}
-:root.theme-lumina.platinum .speed-summary .speed-progress i,
-:root.theme-lumina.platinum .speed-summary.up .speed-progress i {
-  background: linear-gradient(90deg, #8f651d, #e5c367);
-  box-shadow: 0 0 9px -2px #a87c22;
-}
+
 /* 白金: 剩余流量分段条 形态对齐主控(细胶囊; 填充保留黑金4色渐变不动) */
 :root.theme-lumina.platinum .lumina-quota-track {
   height: 4px;
@@ -3820,11 +4267,7 @@ footer a:hover {
 :root.theme-lumina.platinum .lumina-quota-track > span {
   border-radius: 999px;
 }
-/* 黑金: 顶部网络状况 总下行/总上行 实时进度条 统一黑金渐变(同白金, 2026-08-15) */
-:root.theme-lumina.gold .speed-summary .speed-progress i,
-:root.theme-lumina.gold .speed-summary.up .speed-progress i {
-  background: linear-gradient(90deg, #8f651d, #e5c367);
-}
+
 /* 白金: 全部按钮金色系(用户要求, 参照黑金金调 — 浅金底+深棕字, active 金渐变白字) */
 :root.theme-lumina.platinum .filters button,
 :root.theme-lumina.platinum .region-trigger {
@@ -3864,15 +4307,15 @@ footer a:hover {
 }
 /* 白金: 卡片顶部金色扫光(暗金线) */
 :root.theme-lumina.platinum .lumina-card,
-:root.theme-lumina.platinum .summary-card,
 :root.theme-lumina.platinum .globe-card,
-:root.theme-lumina.platinum .leaderboard-card {
+:root.theme-lumina.platinum .leaderboard-card,
+:root.theme-lumina.platinum .kpi-panel {
   position: relative;
 }
 :root.theme-lumina.platinum .lumina-card::after,
-:root.theme-lumina.platinum .summary-card::after,
 :root.theme-lumina.platinum .globe-card::after,
-:root.theme-lumina.platinum .leaderboard-card::after {
+:root.theme-lumina.platinum .leaderboard-card::after,
+:root.theme-lumina.platinum .kpi-panel::after {
   position: absolute;
   z-index: 5;
   top: 0;
@@ -3887,10 +4330,10 @@ footer a:hover {
 }
 /* 白金: 卡片背景金色光晕 + 底部外发光(浅金弱化, 照 license 页 .pixel-card) */
 :root.theme-lumina.platinum .lumina-card,
-:root.theme-lumina.platinum .summary-card,
 :root.theme-lumina.platinum .probe-toolbar,
 :root.theme-lumina.platinum .globe-card,
-:root.theme-lumina.platinum .leaderboard-card {
+:root.theme-lumina.platinum .leaderboard-card,
+:root.theme-lumina.platinum .kpi-panel {
   background:
     linear-gradient(140deg, rgba(168, 124, 34, 0.06), transparent 48%),
     var(--surface);
@@ -3904,10 +4347,10 @@ footer a:hover {
 }
 /* 白金: 卡片 hover 背景不变(用户要求取消变暗 — 保持默认卡背景, 仅阴影增强, 2026-08-17) */
 :root.theme-lumina.platinum .lumina-card:hover,
-:root.theme-lumina.platinum .summary-card:hover,
 :root.theme-lumina.platinum .probe-toolbar:hover,
 :root.theme-lumina.platinum .globe-card:hover,
-:root.theme-lumina.platinum .leaderboard-card:hover {
+:root.theme-lumina.platinum .leaderboard-card:hover,
+:root.theme-lumina.platinum .kpi-panel:hover {
   background:
     linear-gradient(140deg, rgba(168, 124, 34, 0.06), transparent 48%),
     var(--surface);
@@ -3921,13 +4364,13 @@ footer a:hover {
 }
 /* 层级靠表面色 + 描边，不用阴影 */
 :root.theme-lumina .lumina-card,
-:root.theme-lumina .summary-card,
 :root.theme-lumina .probe-toolbar,
 :root.theme-lumina .globe-card,
 :root.theme-lumina .leaderboard-card,
 :root.theme-lumina .server-detail,
 :root.theme-lumina .modal,
-:root.theme-lumina .server-mini-card {
+:root.theme-lumina .server-mini-card,
+:root.theme-lumina .kpi-panel {
   box-shadow: none;
 }
 :root.theme-lumina .topbar {
@@ -3936,13 +4379,13 @@ footer a:hover {
   -webkit-backdrop-filter: blur(14px);
 }
 :root.theme-lumina .server-card,
-:root.theme-lumina .summary-card,
 :root.theme-lumina .probe-toolbar,
 :root.theme-lumina .globe-card,
 :root.theme-lumina .leaderboard-card,
 :root.theme-lumina .server-mini-card,
 :root.theme-lumina .modal,
-:root.theme-lumina .server-detail {
+:root.theme-lumina .server-detail,
+:root.theme-lumina .kpi-panel {
   background: var(--surface);
   border: 1px solid var(--border);
 }
@@ -4561,11 +5004,11 @@ footer a:hover {
    Lumina 不再使用动态背景模糊，避免大量卡片滚动时触发 Chrome 合成层频闪。 */
 :root.theme-lumina .server-card,
 :root.theme-lumina .lumina-card,
-:root.theme-lumina .summary-card,
 :root.theme-lumina .probe-toolbar,
 :root.theme-lumina .globe-card,
 :root.theme-lumina .leaderboard-card,
-:root.theme-lumina .server-mini-card {
+:root.theme-lumina .server-mini-card,
+:root.theme-lumina .kpi-panel {
   border-width: 0 !important;
   background: var(--lumina-glass-card) !important;
   -webkit-backdrop-filter: none;
@@ -4574,11 +5017,11 @@ footer a:hover {
 }
 
 :root.theme-lumina .lumina-card:hover,
-:root.theme-lumina .summary-card:hover,
 :root.theme-lumina .probe-toolbar:hover,
 :root.theme-lumina .globe-card:hover,
 :root.theme-lumina .leaderboard-card:hover,
-:root.theme-lumina .server-mini-card:hover {
+:root.theme-lumina .server-mini-card:hover,
+:root.theme-lumina .kpi-panel:hover {
   transform: none;
   border-color: transparent !important;
   background: var(--lumina-glass-card) !important;
@@ -4591,13 +5034,13 @@ footer a:hover {
 
 /* 原黑金/白金卡片扫光依赖边框，改为无边框后同步关闭。 */
 :root.theme-lumina.gold .lumina-card::after,
-:root.theme-lumina.gold .summary-card::after,
 :root.theme-lumina.gold .globe-card::after,
 :root.theme-lumina.gold .leaderboard-card::after,
 :root.theme-lumina.platinum .lumina-card::after,
-:root.theme-lumina.platinum .summary-card::after,
 :root.theme-lumina.platinum .globe-card::after,
-:root.theme-lumina.platinum .leaderboard-card::after {
+:root.theme-lumina.platinum .leaderboard-card::after,
+:root.theme-lumina.gold .kpi-panel::after,
+:root.theme-lumina.platinum .kpi-panel::after {
   content: none;
   animation: none;
 }
@@ -4636,15 +5079,6 @@ footer a:hover {
   background: var(--lumina-glass-control);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
-}
-
-:root.theme-lumina .node-stats button,
-:root.theme-lumina .speed-summary,
-:root.theme-lumina .assets-main {
-  background: var(--lumina-glass-control);
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.2) inset;
 }
 
 /* 趋势弹窗的滚动图原本会延伸到固定纵轴下面，只能用独立底色遮挡，
@@ -4744,11 +5178,7 @@ footer a:hover {
 }
 
 /* 黑金与白金的实时速度、资源占用和周期流量统一为金色渐变。 */
-:root.theme-lumina.gold .speed-progress i,
-:root.theme-lumina.gold .speed-summary.up .speed-progress i,
 :root.theme-lumina.gold .lumina-meter i,
-:root.theme-lumina.platinum .speed-progress i,
-:root.theme-lumina.platinum .speed-summary.up .speed-progress i,
 :root.theme-lumina.platinum .lumina-meter i {
   background: linear-gradient(90deg, #b87b1e, #e3bd63);
   box-shadow: 0 0 9px -2px #a87c22;

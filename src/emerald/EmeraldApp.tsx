@@ -41,6 +41,7 @@ import {
 } from 'lucide-react'
 import { RegionGlobe } from '../RegionGlobe'
 import { CardPingGroups } from '../CardPingGroups'
+import { primaryPing } from '../ping-groups'
 import { ConnectionHistory } from '../ConnectionHistory'
 import { ForwardOverview, ServerDetail, TrafficDialog } from '../deferred'
 import { Twemoji } from '../Twemoji'
@@ -97,7 +98,8 @@ function flagFromCode(code?: string): string {
 }
 
 function regionCode(server: ProbeServer): string {
-  return (server.region_country || flagToCountryCode(server.region || '') || 'UN').toUpperCase()
+  // 手动选的国旗（region）优先，按 IP 自动识别的 region_country 兜底
+  return (flagToCountryCode(server.region || '') || server.region_country || 'UN').toUpperCase()
 }
 
 function regionFlag(server: ProbeServer): string {
@@ -107,7 +109,7 @@ function regionFlag(server: ProbeServer): string {
 }
 
 function averagePing(server: ProbeServer): { latency: number; loss: number } | null {
-  const series = (server.ping || []).filter((item) => Number.isFinite(item.current_ms) && item.current_ms >= 0)
+  const series = primaryPing(server.ping).filter((item) => Number.isFinite(item.current_ms) && item.current_ms >= 0)
   if (!series.length) return null
   return {
     latency: series.reduce((sum, item) => sum + item.current_ms, 0) / series.length,
@@ -159,7 +161,10 @@ function Overview({ servers }: { servers: EnrichedServer[] }) {
     const traffic = servers.reduce((sum, server) => sum + (server.traffic_used || 0), 0)
     const upload = servers.reduce((sum, server) => sum + (server.upload_speed || 0), 0)
     const download = servers.reduce((sum, server) => sum + (server.download_speed || 0), 0)
-    const remaining = servers.reduce((sum, server) => sum + (computeRemainingValue(server)?.value || 0), 0)
+    const remaining = servers.reduce((sum, server) => {
+      const value = computeRemainingValue(server)
+      return value && value.currency.toUpperCase() === 'CNY' ? sum + value.value : sum
+    }, 0)
     const rows = [
       { key: 'memory', label: '内存用量', icon: <MemoryStick size={17} />, text: bytes(memoryUsed), unit: `/ ${bytes(memoryTotal)}`, tone: 'violet' },
       { key: 'disk', label: '硬盘用量', icon: <HardDrive size={17} />, text: bytes(diskUsed), unit: `/ ${bytes(diskTotal)}`, tone: 'amber' },

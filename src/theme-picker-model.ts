@@ -13,6 +13,7 @@ export const THEME_OPTIONS: { value: ThemeName | null; label: string; color: str
   { value: 'glassmorphism', label: 'Glassmorphism', color: '#62ad9a' },
   { value: 'emerald', label: 'Emerald', color: '#46ad83' },
   { value: 'lite', label: 'Lite', color: '#9489cc' },
+  { value: 'nezha', label: '哪吒', color: '#3b82f6' },
   { value: 'win2000', label: 'Windows 2000', color: '#0a246a' },
   { value: 'winxp', label: 'Windows XP', color: '#0058ee' },
   { value: 'macos9', label: 'Mac OS 9 Platinum', color: '#ccf' },

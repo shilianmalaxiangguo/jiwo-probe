@@ -1,4 +1,4 @@
-export type ThemeName = 'pixel' | 'flat' | 'anime' | 'glass' | 'lumina' | 'premium' | 'ran' | 'glassmorphism' | 'emerald' | 'lite' | 'luminaplus' | 'win2000' | 'winxp' | 'macos9'
+export type ThemeName = 'pixel' | 'flat' | 'anime' | 'glass' | 'lumina' | 'premium' | 'ran' | 'glassmorphism' | 'emerald' | 'lite' | 'luminaplus' | 'nezha' | 'win2000' | 'winxp' | 'macos9'
 
 export interface ProbeBackgroundAppearance {
   url: string
@@ -44,6 +44,8 @@ export interface ProbeServer {
   region_name?: string
   region_city?: string
   online: boolean
+  /** 离线时的最后心跳（RFC3339）；在线时不下发 */
+  last_seen?: string
   upload_speed?: number
   download_speed?: number
   traffic_used?: number
@@ -101,7 +103,7 @@ export interface ProbeServer {
   expires_at?: string
   renewal_price?: number
   renewal_price_cny?: number
-  renewal_cycle?: 'month' | 'quarter' | 'half_year' | 'year' | 'two_year' | 'three_year' | 'permanent'
+  renewal_cycle?: 'month' | 'quarter' | 'half_year' | 'year' | 'two_year' | 'three_year' | 'five_year' | 'permanent'
   renewal_currency?: string
   provider_name?: string
   provider_url?: string

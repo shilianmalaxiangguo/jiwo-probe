@@ -42,12 +42,13 @@ import { getThemeOverride, parseThemeName } from './use-probe'
 import { EXTRA_LICENSE_BADGES, HEADER_LICENSE_BADGES } from './license-badges'
 import { FLAG_OPTIONS } from './country-flag'
 import { displayServerName } from './server-name'
-import { dailyTrafficRows, hasMoreDailyTraffic, hasTrafficPeriod, trafficRuleLabel, type TrafficRange } from './traffic-display'
+import { dailyTrafficRows, hasMoreDailyTraffic, hasTrafficPeriod, trafficPeriodText, trafficRuleLabel, type TrafficRange } from './traffic-display'
 import { BlackGoldGlobe, type PremiumProbeRegion } from './BlackGoldGlobe'
 import { useProbeRange } from './use-probe-range'
 import { probeBucketLabel } from './probe-ranges'
 import { CYCLE_LABELS, CYCLE_MONTHS, expiryTimestamp, isPermanent } from './renewal'
 import './premium-probe.css'
+import { historyPingSeries, isIpv6Ping, primaryPing } from './ping-groups'
 import { serverHealth, averageLatency, percentage, resourcePercentage } from './server-health'
 import { availabilityCells, availabilityPct, chainLiveSpeed, formatAvailability, formatJitter, FORWARD_TRAFFIC_NOTE, FORWARD_TRAFFIC_SETTLE_MINUTES } from './forward-model'
 
@@ -313,8 +314,9 @@ function formatAxisDateTime(unixSeconds: number): string {
 
 function serverRegionKey(server: ProbeServer): string {
   return (
-    server.region_country ||
+    // 手动选的国旗（region）优先，按 IP 自动识别的 region_country 兜底（见 server-format probeRegion）
     flagToCountryCode(server.region) ||
+    server.region_country ||
     server.region?.trim() ||
     'UNKNOWN'
   ).toUpperCase()
@@ -865,7 +867,7 @@ function SmartSummary({ servers }: { servers: ProbeServer[] }) {
   const lossy = servers
     .map((server) => ({
       server,
-      loss: Math.max(-1, ...(server.ping || []).map((item) => item.loss_pct)),
+      loss: Math.max(-1, ...primaryPing(server.ping).map((item) => item.loss_pct)),
     }))
     .sort((left, right) => right.loss - left.loss)[0]
   const parts = [`${online}/${servers.length} 台服务器在线`]
@@ -1995,10 +1997,15 @@ function PremiumNetworkView({
       window.clearInterval(timer)
     }
   }, [range, hasSelectedServer, selectedServerIndex])
+  // 主控的平均把 IPv6 目标也算进去了；有 IPv6 目标时按 IPv4 目标重算（与其他主题同一口径）
+  const averageLabel = selectedServer?.ping?.some(isIpv6Ping) ? 'IPv4 目标平均' : '全部目标平均'
+  const historySeries = detail?.success
+    ? historyPingSeries(detail.series, detail.all_series, averageLabel)
+    : []
   const rows = selectedServer
     ? [selectedServer].map((server) => {
-        const series = server.ping || []
-        const effectiveSeries = detail?.success ? [detail.series] : series
+        const series = primaryPing(server.ping)
+        const effectiveSeries = detail?.success ? [historySeries[0]] : series
         const currentLatency = effectiveSeries
           .map((item) => item.current_ms)
           .filter((value) => value >= 0)
@@ -2010,7 +2017,7 @@ function PremiumNetworkView({
           index: selectedServerIndex,
           series: effectiveSeries,
           buckets: detail?.success
-            ? aggregatePingBuckets([detail.series])
+            ? aggregatePingBuckets([historySeries[0]])
             : aggregatePingBuckets(series),
           latency: currentLatency.length
             ? Math.round(
@@ -2025,12 +2032,7 @@ function PremiumNetworkView({
         }
       })
     : []
-  const chartSeries = detail?.success
-    ? [
-        { ...detail.series, key: '__avg__', label: '全部目标平均' },
-        ...(detail.all_series || []),
-      ]
-    : []
+  const chartSeries = historySeries
   const allChartTargetKeys = chartSeries.map(
     (item) => item.key || pingTargetID(item)
   )
@@ -2122,7 +2124,7 @@ function PremiumNetworkView({
                 )
               }}
             >
-              <option value='__avg__'>仅显示全部目标平均</option>
+              <option value='__avg__'>仅显示{averageLabel.startsWith('IPv4') ? ' ' : ''}{averageLabel}</option>
               <option value='__all__'>显示所有探测目标</option>
               {selectedTarget === '__custom__' && (
                 <option value='__custom__'>自定义目标组合</option>
@@ -2453,7 +2455,7 @@ function PremiumServerCard({
     ? `${formatTrafficCompact(trafficUsed)} / ${formatTrafficCompact(server.traffic_limit)}`
     : formatTrafficCompact(trafficUsed)
   const latency = averageLatency(server)
-  const losses = (server.ping || [])
+  const losses = primaryPing(server.ping)
     .map((item) => item.loss_pct)
     .filter((value) => value >= 0)
   const loss = losses.length
@@ -2467,7 +2469,7 @@ function PremiumServerCard({
     1,
     ...dailyTraffic.map((day) => day.total || day.uplink + day.downlink)
   )
-  const latencyBuckets = aggregatePingBuckets(server.ping || [])
+  const latencyBuckets = aggregatePingBuckets(primaryPing(server.ping))
   const latencySamples = latencyBuckets
     .map((bucket, bucketIndex): TrendSample | undefined => {
       if (bucket.ms === undefined) return undefined
@@ -2658,10 +2660,7 @@ function ServerDetailDrawer({
                   server.traffic_adjustment < 0 ? '−' : '+'
                 } ${formatTrafficCompact(Math.abs(server.traffic_adjustment))} = ${formatTrafficCompact(server.traffic_used)}`
               : null,
-          period:
-            server.period_start && server.period_end
-              ? `${server.period_start.slice(5)} — ${server.period_end.slice(5)}`
-              : null,
+          period: trafficPeriodText(server) ?? null,
           boot:
             (server.boot_traffic_up !== undefined ||
               server.boot_traffic_down !== undefined) &&
