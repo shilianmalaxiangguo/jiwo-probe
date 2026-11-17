@@ -10,6 +10,7 @@ import { EnrichedServer, getActiveTheme, getDarkOverride, getThemeOverride, setD
 import { Twemoji } from './Twemoji'
 import { PasskeyLogin } from './PasskeyLogin'
 import { CardPingGroups } from './CardPingGroups'
+import { LazyCard } from './LazyCard'
 import { computeRemainingValue, formatMoney } from './value'
 import { LEADERBOARD_ORDER } from './leaderboards'
 import { Leaderboard, formatUptime, monthlyCost } from './Leaderboard'
@@ -22,17 +23,46 @@ import { ForwardOverview, prefetchDeferred, ServerDetail, SystemTrendChart, Traf
 import { Meter, systemTitle, SystemIcon, routeCarrierLabels, goldRoutes, displayReturnRoute, ReturnRouteBadges } from './components/ServerVisuals'
 import { LUMINA_QUOTA_SEGMENTS } from './components/LuminaHealthBars'
 import { ProbeLicenseBar } from './components/ProbeLicenseBar'
+import { ProbeHeaderLicense } from './components/ProbeHeaderLicense'
 import { globeCountryCode, regionGroupLabel } from './globe-regions'
 import { PROBE_ALERT_PCT, PROBE_SORT_KEYS, PROBE_SORT_LABELS, connectionTotals, dailyTrafficTotals, formatCapacity, formatSize, meterTone, networkQuality, kpiColumns, probeHealthIssue, quotaSummary, relativeTime, sortProbeServers, type ProbeHealthIssue, type ProbeSortKey } from './probe-overview'
 
 // 与主控内置探针同款的地区地球（拱形弧线 + 亮点旁旗帜与台数）
 const RegionGlobe = lazy(() => import('./ProbeRegionGlobe').then((module) => ({ default: module.ProbeRegionGlobe })))
-const PremiumProbePage = lazy(() => import('./PremiumProbePage').then((module) => ({ default: module.PremiumProbePage })))
-const GmApp = lazy(() => import('./glassmorphism/GmApp').then((module) => ({ default: module.default })))
-const EmeraldApp = lazy(() => import('./emerald/EmeraldApp').then((module) => ({ default: module.default })))
-const MiniApp = lazy(() => import('./mini/MiniApp'))
-const LuminaPlusApp = lazy(() => import('./luminaplus/LuminaPlusApp'))
-const NezhaApp = lazy(() => import('./nezha/NezhaApp'))
+const loadPremium = () => import('./PremiumProbePage')
+const loadGlassmorphism = () => import('./glassmorphism/GmApp')
+const loadEmerald = () => import('./emerald/EmeraldApp')
+const loadLite = () => import('./mini/MiniApp')
+const loadLuminaPlus = () => import('./luminaplus/LuminaPlusApp')
+const loadNezha = () => import('./nezha/NezhaApp')
+const PremiumProbePage = lazy(() => loadPremium().then((module) => ({ default: module.PremiumProbePage })))
+const GmApp = lazy(() => loadGlassmorphism().then((module) => ({ default: module.default })))
+const EmeraldApp = lazy(() => loadEmerald().then((module) => ({ default: module.default })))
+const MiniApp = lazy(loadLite)
+const LuminaPlusApp = lazy(loadLuminaPlus)
+const NezhaApp = lazy(loadNezha)
+const THEME_CHUNKS: Record<string, () => Promise<unknown>> = {
+  premium: loadPremium,
+  glassmorphism: loadGlassmorphism,
+  emerald: loadEmerald,
+  lite: loadLite,
+  luminaplus: loadLuminaPlus,
+  nezha: loadNezha,
+}
+
+/** 回访时主题已知，不必等首帧数据到了才开始下载主题包。 */
+export function preloadActiveThemeChunk(): void {
+  THEME_CHUNKS[getActiveTheme()]?.().catch(() => { /* 真正渲染时会再加载一次 */ })
+}
+
+let themeChunksPrefetched = false
+/** 访客要换主题时一次性预取所有主题包（压缩后合计约 110 KB），点选后直接渲染，不出现「正在加载…」。省流量模式不预取。 */
+export function prefetchThemeChunks(): void {
+  if (themeChunksPrefetched) return
+  themeChunksPrefetched = true
+  if ((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return
+  for (const load of Object.values(THEME_CHUNKS)) load().catch(() => { /* 点选时会再加载 */ })
+}
 const MiniServerDetail = lazy(() => import('./mini/MiniServerDetail'))
 
 function RegionSelect({ regions, value, onChange }: { regions: string[]; value: string; onChange: (value: string) => void }) {
@@ -610,8 +640,9 @@ function ServerCard({ server, index, dense = false }: { server: ProbeServer; ind
       </article>
     )
   }
-  // 计费用量：按周期统计的写「本周期」，其余（计数器累计、按累计值估算）写「计数器重置以来」，与主控探针页同一叫法
-  const trafficLabel = server.traffic_used_scope && server.traffic_used_scope !== 'configured_period' ? '计数器重置以来计费用量' : '本周期计费用量'
+  // 计费口径：按周期统计的写「本周期」，其余（计数器累计、按累计值估算）写「计数器重置以来」，与主控探针页同一叫法。
+  // 卡片上标签只写「流量」，口径放在悬停提示里，否则手机上长标签会被数值挤成半截。
+  const trafficScope = server.traffic_used_scope && server.traffic_used_scope !== 'configured_period' ? '计数器重置以来计费用量' : '本周期计费用量'
   const bootDown = server.boot_traffic_down ?? server.cumulative_down
   const bootUp = server.boot_traffic_up ?? server.cumulative_up
   return (
@@ -626,7 +657,7 @@ function ServerCard({ server, index, dense = false }: { server: ProbeServer; ind
           <button
             type="button"
             className="metric metric-button"
-            title="查看日流量趋势"
+            title={`${trafficScope} · 点击查看日流量趋势`}
             onClick={(event) => {
               event.stopPropagation()
               setTrafficOpen(true)
@@ -635,7 +666,7 @@ function ServerCard({ server, index, dense = false }: { server: ProbeServer; ind
             <div className="metric-head">
               <span>
                 <PieChart size={14} />
-                <span className="metric-label">{trafficLabel}</span>
+                <span className="metric-label">流量</span>
               </span>
               <strong>
                 {server.traffic_limit ? `${bytes(server.traffic_used, false)} / ${bytes(server.traffic_limit, false)}` : bytes(server.traffic_used, false)}
@@ -1156,7 +1187,7 @@ export function App() {
   const hasData = !!probe.data
   // 首帧数据渲染完再在空闲时预取图表模块，不和主题包、首帧数据抢带宽
   useEffect(() => { if (hasData) prefetchDeferred() }, [hasData])
-  return <ProbeHistoryDaysContext.Provider value={probe.data?.history_days}><StaleDataBanner error={probe.error} updatedAt={probe.updatedAt} /><ProbeApp {...probe} /></ProbeHistoryDaysContext.Provider>
+  return <ProbeHistoryDaysContext.Provider value={probe.data?.history_days}><StaleDataBanner error={probe.error} updatedAt={probe.updatedAt} fromSnapshot={probe.fromSnapshot} /><ProbeApp {...probe} /></ProbeHistoryDaysContext.Provider>
 }
 
 function ProbeApp({ data, error }: ReturnType<typeof useProbe>) {
@@ -1477,15 +1508,19 @@ function ProbeApp({ data, error }: ReturnType<typeof useProbe>) {
     ),
   ].filter(Boolean)
   const kpiCols = kpiColumns(kpis.length, kpiWidth)
-  const renderCard = (server: ProbeServer, index: number) => activeTheme === 'lumina'
-    ? <ServerCardLumina key={server.name || index} server={server} index={index} />
-    : <ServerCard key={server.name || index} server={server} index={index} dense={dense} />
+  const renderCard = (server: ProbeServer, index: number) => {
+    const name = server.name || `服务器 ${index + 1}`
+    return activeTheme === 'lumina'
+      ? <LazyCard key={server.name || index} className="server-card lumina-card" name={name} estimatedHeight={648}><ServerCardLumina server={server} index={index} /></LazyCard>
+      : <LazyCard key={server.name || index} className={`server-card probe-card${dense ? ' dense' : ''}`} name={name} estimatedHeight={!server.online ? 136 : dense ? 200 : activeTheme === 'anime' ? 495 : 462}><ServerCard server={server} index={index} dense={dense} /></LazyCard>
+  }
   return (
     <div className='app-shell'>
       <header className="topbar">
         <div>
           {data.logo && <img src={data.logo} alt="" />}
           <h1>{title}</h1>
+          {!isLuminaTheme && <ProbeHeaderLicense badges={data.license_badge} />}
         </div>
         <nav>
           <PasskeyLogin />
@@ -1608,11 +1643,14 @@ function ProbeApp({ data, error }: ReturnType<typeof useProbe>) {
           </section>
         )) : view === 'mini' ? visible.map(({ server, index }) => <ServerMiniCard key={server.name || index} server={server} index={index} expanded={miniExpanded} />) : <ServerTable servers={visible.map(({ server }) => server)} /> : <div className="empty">暂无符合条件的服务器</div>}
       </main>
-      <footer>
-        Powered by{' '}
-        <a href="https://github.com/mmwx-group" target="_blank" rel="noreferrer">
-          MMWX Group
-        </a>
+      <footer className="probe-credit-footer">
+        <span>Powered by <a href="https://github.com/chnnic/jiwo-probe" target="_blank" rel="noreferrer">Jiwo Probe</a></span>
+        <span>
+          Powered by{' '}
+          <a href="https://github.com/mmwx-group" target="_blank" rel="noreferrer">
+            MMWX Group
+          </a>
+        </span>
       </footer>
       {/* 许可证放在页面末尾并带动画开关（与 LuminaPlus、Premium 一致）；开关按主题分别记忆 */}
       <ProbeLicenseBar badges={data.license_badge} storageKey={`jiwo-${activeTheme}-license-anim`} className="probe-license-bar" toggleClassName="probe-license-toggle" />

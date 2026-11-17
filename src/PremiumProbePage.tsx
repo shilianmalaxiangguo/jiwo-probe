@@ -50,7 +50,8 @@ import { CYCLE_LABELS, CYCLE_MONTHS, expiryTimestamp, isPermanent } from './rene
 import './premium-probe.css'
 import { historyPingSeries, isIpv6Ping, primaryPing } from './ping-groups'
 import { serverHealth, averageLatency, percentage, resourcePercentage } from './server-health'
-import { availabilityCells, availabilityPct, chainLiveSpeed, formatAvailability, formatJitter, FORWARD_TRAFFIC_NOTE, FORWARD_TRAFFIC_SETTLE_MINUTES } from './forward-model'
+import { availabilityCells, availabilityPct, chainLiveSpeed, formatAvailability, formatJitter, hopMatrices, FORWARD_TRAFFIC_NOTE, FORWARD_TRAFFIC_SETTLE_MINUTES } from './forward-model'
+import { LazyCard } from './LazyCard'
 
 type ProbeData = ProbePayload
 
@@ -1891,6 +1892,54 @@ function ForwardChainView({ wsChains }: { wsChains?: ForwardChainData[] }) {
         </div>
       </section>
 
+      {hopMatrices(chain).map((matrix) => (
+        <section className="premium-probe-forward-card" key={`${matrix.from}>${matrix.to}`}>
+          <header>
+            <h3>
+              <Target />
+              逐台延迟矩阵
+            </h3>
+            <span>
+              {matrix.from} → {matrix.to} · 行是本组每台，列是下一组每台
+            </span>
+          </header>
+          <div className="body">
+            <div className="fmx">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col" />
+                    {matrix.targets.map((target) => (
+                      <th scope="col" key={target} title={target}>
+                        <span><Twemoji>{target}</Twemoji></span>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {matrix.rows.map((row, i) => (
+                    <tr key={`${row.name}-${i}`}>
+                      <th scope="row" title={row.name}>
+                        <span><Twemoji>{row.name}</Twemoji></span>
+                      </th>
+                      {row.cells.map((cell, j) => (
+                        <td
+                          key={j}
+                          className={`slat ${!cell ? "is-idle" : cell.tone === "down" ? "is-hi" : forwardLatencyClass(cell.ms)}`}
+                        >
+                          {!cell ? "—" : cell.ms > 0 ? `${cell.ms} ms` : cell.tone === "down" ? "不可达" : "—"}
+                          {cell && cell.loss > 0 && <small>丢 {cell.loss}%</small>}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      ))}
+
       {chain.traffic && chain.traffic.servers.length > 0 && (
         <section className="premium-probe-forward-card">
           <header>
@@ -3409,13 +3458,19 @@ export function PremiumProbePage({
               ) : (
                 <div className='premium-probe-card-grid'>
                   {visibleServers.map((server, index) => (
-                    <PremiumServerCard
-                      server={server}
-                      index={index}
+                    <LazyCard
                       key={`${server.name || 'server'}-${index}`}
-                      onOpen={() => setSelectedServer(index)}
-                      showHealthScore={data?.show_health_score === true}
-                    />
+                      className='premium-probe-server-card'
+                      name={server.name || `服务器 ${index + 1}`}
+                      estimatedHeight={309}
+                    >
+                      <PremiumServerCard
+                        server={server}
+                        index={index}
+                        onOpen={() => setSelectedServer(index)}
+                        showHealthScore={data?.show_health_score === true}
+                      />
+                    </LazyCard>
                   ))}
                 </div>
               )}
@@ -3434,6 +3489,7 @@ export function PremiumProbePage({
       )}
 
       <footer className='premium-probe-footer'>
+        <span className='premium-probe-footer-credit'>Powered by <a href='https://github.com/chnnic/jiwo-probe' target='_blank' rel='noreferrer'>Jiwo Probe</a></span>
         <div className='premium-probe-footer-badges'>
           {(() => {
             // 与经典界面 Footer 同款去重: 本地 EXTRA 为主, 主控同名勋章覆盖, 其余主控勋章追加
@@ -3455,6 +3511,7 @@ export function PremiumProbePage({
         >
           <Sparkles />
         </button>
+        <span className='premium-probe-footer-credit is-controller'>Powered by <a href='https://github.com/mmwx-group' target='_blank' rel='noreferrer'>MMWX Group</a></span>
       </footer>
     </div>
   )

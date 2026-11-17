@@ -5,7 +5,9 @@ export const THEME_OPTIONS: { value: ThemeName | null; label: string; color: str
   { value: 'pixel', label: '像素', color: '#cca34e' },
   { value: 'flat', label: '扁平', color: '#518cbf' },
   { value: 'anime', label: '动漫', color: '#ce86b0' },
-  { value: 'glass', label: '玻璃', color: '#7fa8bb' },
+  { value: 'glass', label: '液态玻璃', color: '#4cb8f5' },
+  { value: 'sweet', label: '天真', color: '#e8508f' },
+  { value: 'meow', label: 'Meow', color: '#b02e63' },
   { value: 'lumina', label: 'Lumina', color: '#a991cd' },
   { value: 'luminaplus', label: 'LuminaPlus', color: '#be7c61' },
   { value: 'premium', label: 'Premium', color: '#c6a254' },
@@ -38,3 +40,6 @@ export function pickerNextIndex(index: number, key: string, count: number) {
   const delta = ({ ArrowDown: 2, ArrowUp: -2, ArrowRight: 1, ArrowLeft: -1 } as Record<string, number>)[key]
   return delta === undefined ? index : (index + delta + count) % count
 }
+
+/** 访客表现出要换主题（指针移到主题按钮或打开面板）时派发，外壳据此预取各主题的包。 */
+export const THEME_PICKER_INTENT_EVENT = 'jiwo:theme-picker-intent'

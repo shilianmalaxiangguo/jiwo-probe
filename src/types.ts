@@ -1,4 +1,4 @@
-export type ThemeName = 'pixel' | 'flat' | 'anime' | 'glass' | 'lumina' | 'premium' | 'ran' | 'glassmorphism' | 'emerald' | 'lite' | 'luminaplus' | 'nezha' | 'win2000' | 'winxp' | 'macos9'
+export type ThemeName = 'pixel' | 'flat' | 'anime' | 'glass' | 'sweet' | 'meow' | 'lumina' | 'premium' | 'ran' | 'glassmorphism' | 'emerald' | 'lite' | 'luminaplus' | 'nezha' | 'win2000' | 'winxp' | 'macos9'
 
 export interface ProbeBackgroundAppearance {
   url: string
@@ -138,6 +138,8 @@ export interface ProbePayload {
   show_traffic_quota?: boolean
   show_renewal_timeline?: boolean
   show_health_score?: boolean
+  /** 主控「三网延迟」：哪三个探测点代表电信 / 联通 / 移动（只带 isp / key / label）。开启时卡片延迟组优先用它，见 applyTriIsp。 */
+  tri_isp?: { enabled?: boolean; targets?: Array<{ isp?: string; key?: string; label?: string }> }
   /** Controller history retention in days (1–7); absent on older controllers. */
   history_days?: number
   title?: string
@@ -155,6 +157,14 @@ export interface ProbePayload {
   servers?: ProbeServer[]
 }
 
+/** 主控 v0.6.2 起（开了「转发链全服务器延迟矩阵」）：本台到下一组某一台的实测延迟 */
+export interface ForwardChainUpstream {
+  name: string
+  ms: number
+  loss_pct?: number
+  healthy?: boolean
+}
+
 export interface ForwardChainServerData {
   name: string
   to_next_ms: number
@@ -163,6 +173,8 @@ export interface ForwardChainServerData {
   loss_pct?: number
   /** 选路段分叉组成员当前走的路名（如「路1」） */
   route?: string
+  /** 主控 v0.6.2 起：本台到下一组每一台的逐对延迟；主控没开矩阵开关时没有 */
+  ups?: ForwardChainUpstream[]
 }
 
 export interface ForwardChainGroupData {

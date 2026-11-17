@@ -2,22 +2,22 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { THEME_OPTIONS, pickerPosition, pickerNextIndex } from './theme-picker-model.ts'
 
-test('picker exposes all 15 themes and automatic choice exactly once', () => {
-  assert.equal(THEME_OPTIONS.length, 16)
-  assert.equal(new Set(THEME_OPTIONS.map(option => option.value)).size, 16)
+test('picker exposes all 17 themes and automatic choice exactly once', () => {
+  assert.equal(THEME_OPTIONS.length, 18)
+  assert.equal(new Set(THEME_OPTIONS.map(option => option.value)).size, 18)
   assert.equal(THEME_OPTIONS[0].value, null)
   assert.ok(THEME_OPTIONS.some(option => option.value === 'ran'))
   assert.ok(THEME_OPTIONS.some(option => option.value === 'nezha'))
-  for (const theme of ['win2000', 'winxp', 'macos9']) {
+  for (const theme of ['win2000', 'winxp', 'macos9', 'sweet', 'meow']) {
     assert.ok(THEME_OPTIONS.some(option => option.value === theme))
   }
 })
 test('picker stays inside narrow and short viewports at either edge', () => {
   for (const width of [280, 320, 390, 1280]) for (const height of [240, 844]) {
-    for (const right of [46, width - 8]) {
-      const p = pickerPosition({top: 20, bottom: 56, right}, {width, height})
+    for (const right of [46, width - 8]) for (const menuHeight of [328, 420]) {
+      const p = pickerPosition({top: 20, bottom: 56, right}, {width, height}, menuHeight)
       assert.ok(p.left >= 8 && p.left + p.width <= width - 8)
-      assert.ok(p.top >= 8 && p.top + Math.min(328, p.maxHeight) <= height - 8)
+      assert.ok(p.top >= 8 && p.top + Math.min(menuHeight, p.maxHeight) <= height - 8)
     }
   }
 })
